@@ -18,10 +18,6 @@ for most purposes this definition will suffice:
 .. automethod:: pomdp_belief_tracking.types.StateDistribution.__call__
    :noindex:
 
-.. todo::
-
-  Fill in list
-
 .. belief update
 
 Similarly, the exact detail of the belief update will differ immensely, and
@@ -32,9 +28,14 @@ the following definition:
 .. automethod:: pomdp_belief_tracking.types.BeliefUpdate.__call__
    :noindex:
 
-.. todo::
+.. features
 
-  Fill in list
+.. toctree::
+   :maxdepth: 2
+   :caption: Features
+
+   particle-filters
+   exact-belief
 
 Design
 ======
@@ -42,7 +43,7 @@ Design
 A quick note on some design choices that have been made.
 
 API
-===
+---
 
 .. functional is liked
 
