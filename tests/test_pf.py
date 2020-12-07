@@ -3,10 +3,11 @@
 
 
 import random
+from operator import eq
 
 import pytest  # type: ignore
 
-from pomdp_belief_tracking.pf import Particle, ParticleFilter
+from pomdp_belief_tracking.pf import Particle, ParticleFilter, general_rejection_sample
 
 
 def test_pf_data_model():
@@ -116,3 +117,91 @@ def test_pf_call():
     assert 10 in samples
     assert -1 in samples
     assert samples.count(10) > samples.count(-1)
+
+
+def test_general_rejection_sample():
+    """Tests :py:funct:`~pomdp_belief_tracking.pf.general_rejection_sample`"""
+
+    def distr():
+        return random.choice([[10], [3]])
+
+    def proposal(x):
+        x[0] += 2
+        return (x, random.choice([True, False]))
+
+    def accept_function(_, ctx):
+        return ctx
+
+    def process_accepted(x, _):
+        x[0] -= 1
+        return x
+
+    with pytest.raises(AssertionError):
+        general_rejection_sample(proposal, accept_function, distr, 0, process_accepted)
+
+    samples = general_rejection_sample(
+        proposal, accept_function, distr, 4, process_accepted
+    )
+
+    assert len(samples) == 4, f"Expecting requested samples, not {len(samples)}"
+    assert all(list(x[0] in [11, 4] for x in samples)), "samples should be incremented"
+
+    start_samples = [[10], [3]]
+
+    def distr_no_copy():
+        return random.choice(start_samples)
+
+    def process_rejected_reset(x, _):
+        x[0] -= 2
+        return x
+
+    samples = general_rejection_sample(
+        proposal,
+        accept_function,
+        distr_no_copy,
+        20,
+        process_accepted,
+        process_rejected_reset,
+    )
+
+    assert len(samples) == 20, f"Expecting requested samples, not {len(samples)}"
+    assert not all(list(x[0] in [11, 4] for x in samples)), "samples are modified"
+
+    def process_accepted_copy(x, _):
+        copy = [x[0]]
+        # reset original
+        x[0] -= 2
+        return copy
+
+    start_samples = [[10], [3]]
+
+    samples = general_rejection_sample(
+        proposal,
+        accept_function,
+        distr_no_copy,
+        20,
+        process_accepted_copy,
+        process_rejected_reset,
+    )
+
+    assert len(samples) == 20
+    assert all(list(x[0] in [12, 5] for x in samples)), ""
+
+
+@pytest.mark.parametrize(
+    "particles,equality,particle,prob",
+    [
+        ([Particle(10, 1.0)], eq, 10, 1.0),
+        ([Particle(10, 1.0), Particle(10, 1.0)], eq, 10, 1.0),
+        ([Particle(10, 1.0), Particle(10, 1.0)], eq, 5, .0),
+        ([Particle(10, 1.0), Particle(5, 1.0)], eq, 10, 0.5),
+        ([Particle(10, 1.0), Particle(5, 1.0)], lambda o1, o2: True, 5, 1.0),
+        ([Particle(10, 1.0), Particle(5, 1.0)], lambda o1, o2: False, 5, 0.0),
+    ],
+)
+def test_pf_probability_of(particles, equality, particle, prob):
+    """Tests :py:meth:`~pomdp_belief_tracking.pf.ParticleFilter.probability_of`"""
+    assert (
+        ParticleFilter.from_particles(particles).probability_of(particle, equality)
+        == prob
+    )

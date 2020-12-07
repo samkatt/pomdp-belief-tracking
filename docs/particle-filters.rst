@@ -16,8 +16,8 @@ the additional API. Mainly some convenient constructors, and the ability to use
 them as containers.
 
 .. autoclass:: pomdp_belief_tracking.pf.ParticleFilter
-   :members:
-   :special-members:
+   :members: probability_of, from_distribution, from_particles
+   :special-members: __call__, __len__, __contains__, __iter__
    :noindex:
 
 ------------------------------
@@ -28,6 +28,11 @@ Particle filtering techniques are popular and available in large varieties. We
 provide rejection sampling:
 
 .. autofunction:: pomdp_belief_tracking.pf.rejection_sample
+   :noindex:
+
+Which can best be created through
+
+.. autofunction:: pomdp_belief_tracking.pf.create_rejection_sampling
    :noindex:
 
 
