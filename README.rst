@@ -3,8 +3,8 @@ pomdp-belief-tracking
 =====================
 
 
-.. image:: https://img.shields.io/travis/samkatt/pomdp_belief_tracking.svg
-        :target: https://travis-ci.com/samkatt/pomdp_belief_tracking
+.. image:: https://travis-ci.com/samkatt/pomdp-belief-tracking.svg?branch=main
+       :target: https://travis-ci.com/samkatt/pomdp-belief-tracking
 
 .. image:: https://readthedocs.org/projects/pomdp-belief-tracking/badge/?version=latest
         :target: https://pomdp-belief-tracking.readthedocs.io/en/latest/?badge=latest
