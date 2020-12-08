@@ -16,17 +16,9 @@ from functools import partial
 from math import isclose
 from operator import eq
 from random import uniform
-from typing import (
-    Any,
-    Callable,
-    Iterable,
-    List,
-    NamedTuple,
-    Protocol,
-    Sequence,
-    Tuple,
-    TypeVar,
-)
+from typing import Any, Callable, Iterable, List, NamedTuple, Sequence, Tuple, TypeVar
+
+from typing_extensions import Protocol
 
 from pomdp_belief_tracking.types import (
     Action,
