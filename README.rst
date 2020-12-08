@@ -3,9 +3,6 @@ pomdp-belief-tracking
 =====================
 
 
-.. image:: https://img.shields.io/pypi/v/pomdp_belief_tracking.svg
-        :target: https://pypi.python.org/pypi/pomdp_belief_tracking
-
 .. image:: https://img.shields.io/travis/samkatt/pomdp_belief_tracking.svg
         :target: https://travis-ci.com/samkatt/pomdp_belief_tracking
 
