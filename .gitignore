@@ -1,7 +1,3 @@
-# docs
-docs/modules.rst
-docs/pomdp_belief_tracking.rst
-
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
