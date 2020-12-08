@@ -10,7 +10,7 @@ pomdp-belief-tracking
         :target: https://pomdp-belief-tracking.readthedocs.io/en/latest/?badge=latest
         :alt: Documentation Status
 
-Methods for tracking and maintaining state estimates in POMDPs
+Methods for tracking and maintaining state estimates in POMDPs, hosted on Github_
 
 * Free software: MIT license
 * Documentation: https://pomdp-belief-tracking.readthedocs.io.
@@ -50,3 +50,4 @@ This package was created with Cookiecutter_ and the `audreyr/cookiecutter-pypack
 
 .. _Cookiecutter: https://github.com/audreyr/cookiecutter
 .. _`audreyr/cookiecutter-pypackage`: https://github.com/audreyr/cookiecutter-pypackage
+.. _Github: https://github.com/samkatt/pomdp-belief-tracking
