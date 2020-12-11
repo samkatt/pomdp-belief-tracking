@@ -193,7 +193,7 @@ def test_general_rejection_sample():
     [
         ([Particle(10, 1.0)], eq, 10, 1.0),
         ([Particle(10, 1.0), Particle(10, 1.0)], eq, 10, 1.0),
-        ([Particle(10, 1.0), Particle(10, 1.0)], eq, 5, .0),
+        ([Particle(10, 1.0), Particle(10, 1.0)], eq, 5, 0.0),
         ([Particle(10, 1.0), Particle(5, 1.0)], eq, 10, 0.5),
         ([Particle(10, 1.0), Particle(5, 1.0)], lambda o1, o2: True, 5, 1.0),
         ([Particle(10, 1.0), Particle(5, 1.0)], lambda o1, o2: False, 5, 0.0),

@@ -37,7 +37,7 @@ extensions = [
     "sphinx.ext.viewcode",
     "sphinx.ext.autosummary",
     "sphinx.ext.todo",
-    'sphinx_rtd_theme',
+    "sphinx_rtd_theme",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -90,7 +90,8 @@ todo_include_todos = False
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-import sphinx_rtd_theme   # isort:skip pylint: disable=unused-import,wrong-import-position    
+import sphinx_rtd_theme  # isort:skip pylint: disable=unused-import,wrong-import-position
+
 html_theme = "sphinx_rtd_theme"
 
 # Theme options are theme-specific and customize the look and feel of a

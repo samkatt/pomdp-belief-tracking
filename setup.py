@@ -39,6 +39,7 @@ setup(
     keywords='pomdp_belief_tracking',
     name='pomdp_belief_tracking',
     packages=find_packages(include=['pomdp_belief_tracking', 'pomdp_belief_tracking.*']),
+    package_data={'pomdp_belief_tracking': ['py.typed']},
     setup_requires=setup_requirements,
     test_suite='tests',
     tests_require=test_requirements,
