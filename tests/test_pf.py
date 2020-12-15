@@ -7,7 +7,12 @@ from operator import eq
 
 import pytest  # type: ignore
 
-from pomdp_belief_tracking.pf import Particle, ParticleFilter, general_rejection_sample
+from pomdp_belief_tracking.pf import (
+    CountAcceptedSamples,
+    Particle,
+    ParticleFilter,
+    general_rejection_sample,
+)
 
 
 def test_pf_data_model():
@@ -117,6 +122,18 @@ def test_pf_call():
     assert 10 in samples
     assert -1 in samples
     assert samples.count(10) > samples.count(-1)
+
+
+def test_counter():
+    """Tests :py:class:`~pomdp-belief-tracking.pf.Counter`"""
+
+    counter = CountAcceptedSamples()
+
+    num_calls = 4
+    for _ in range(num_calls):
+        counter(s=None, ctx=None)
+
+    assert counter.count == 4
 
 
 def test_general_rejection_sample():

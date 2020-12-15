@@ -12,12 +12,22 @@ functions to update them:
 
 from __future__ import annotations
 
-from functools import partial
 from math import isclose
 from operator import eq
 from random import uniform
-from typing import Any, Callable, Iterable, List, NamedTuple, Sequence, Tuple, TypeVar
+from typing import (
+    Any,
+    Callable,
+    Iterable,
+    List,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Tuple,
+    TypeVar,
+)
 
+from tqdm import tqdm  # type: ignore
 from typing_extensions import Protocol
 
 from pomdp_belief_tracking.types import (
@@ -227,38 +237,6 @@ class AcceptFunction(Protocol):
         """
 
 
-class ProcessAccepted(Protocol):
-    """A function that processes an accepted sample in general rejection sampling"""
-
-    def __call__(self, s: State, ctx: Any) -> State:
-        """Processes an accepted sample ``s`` with some context ``ctx``
-
-        An example usage could be that if, for optimizations sake, the sample
-        ``s`` was not copied from the original distribution, then this can
-        reset it and return a copy
-
-        :param s: accepted sample
-        :type s: State
-        :param ctx: output of :py:func:`AcceptFunction`
-        :type ctx: Any
-        :return: processed sample
-        :rtype: State
-        """
-
-
-def accept_noop(s: State, ctx: Any) -> State:  # pylint: disable=unused-argument
-    """A placeholder for :py:class:`ProcessAccepted`: does nothing
-
-    :param s: the accepted sample
-    :type s: State
-    :param ctx: the output of :py:func:`AcceptFunction`
-    :type ctx: Any
-    :return: ``s``
-    :rtype: State
-    """
-    return s
-
-
 class ProcessRejected(Protocol):
     """A function that processes a rejected sample in general rejection sampling"""
 
@@ -288,6 +266,114 @@ def reject_noop(s: State, ctx: Any) -> None:  # pylint: disable=unused-argument
     :return: Only side effects
     :rtype: None
     """
+
+
+class ProcessAccepted(Protocol):
+    """A function that processes an accepted sample in general rejection sampling"""
+
+    def __call__(self, s: State, ctx: Any) -> State:
+        """Processes an accepted sample ``s`` with some context ``ctx``
+
+        An example usage could be that if, for optimizations sake, the sample
+        ``s`` was not copied from the original distribution, then this can
+        reset it and return a copy
+
+        :param s: accepted sample
+        :type s: State
+        :param ctx: output of :py:func:`AcceptFunction`
+        :type ctx: Any
+        :return: processed sample
+        :rtype: State
+        """
+
+
+class CountAcceptedSamples(ProcessAccepted):
+    """Increments a counter whenever called
+
+    Can be used as :py:class:`ProcessAccepted` or :py:class:`ProcessRejected`
+    to count exceptions and rejections
+    """
+
+    def __init__(self):
+        """Initiates with zero counter"""
+        super().__init__()
+
+        self.count = 0
+
+    def __call__(self, s: State, ctx: Any) -> State:
+        """Increments counter"""
+        self.count += 1
+        return s
+
+
+def accept_noop(s: State, ctx: Any) -> State:  # pylint: disable=unused-argument
+    """A placeholder for :py:class:`ProcessAccepted`: does nothing
+
+    :param s: the accepted sample
+    :type s: State
+    :param ctx: the output of :py:func:`AcceptFunction`
+    :type ctx: Any
+    :return: ``s``
+    :rtype: State
+    """
+    return s
+
+
+class AcceptionProgressBar(ProcessAccepted):
+    """A :py:class:`ProcessAccepted` call that prints out a progress bar
+
+    The progress bar is printed by ``tqdm``, and will magnificently fail if
+    something else is printed or logged during.
+
+    XXX: not tested because UI is hard to test, please modify with care
+    """
+
+    def __init__(self, total_expected_samples: int):
+        """Sets up a progress bar for up to ``total_expected_samples`` samples
+
+        We assume that ``total_expected_samples`` will be _exactly_ the number
+        of samples to be accepted (i.e. calls to ``__call__``). Any less will
+        not close the progress bar, any more and the progress bar will reset.
+
+        :param total_expected_samples: 'length' of progress bar
+        :type total_expected_samples: int
+        """
+        super().__init__()
+        self._calls_before_reset = total_expected_samples
+
+        # :py:class`AcceptionProgressBar` has 'state', in the sense that in
+        # order to tell ``tqdm`` when to start or stop the progress bar we
+        # actually track how often this is called.
+        self._num_calls = 0
+
+        # ``tqdm`` starts the progress bar upon initiation. At this point the
+        # belief update is not happening yet, so we do not want to print it
+        self.pbar: Optional[tqdm] = None  # pylint: disable=unsubscriptable-object
+
+    def __call__(self, s: State, ctx: Any) -> State:
+        """Called upon accepting a sample. Updates progress bar
+
+        Closes bar upon reaching ``total_expected_samples``
+
+        :param s: accepted state (returned without modification)
+        :type s: State
+        :param ctx: context of acception (ignored)
+        :type ctx: Any
+        :return: ``s`` as input
+        :rtype: State
+        """
+        if not self.pbar:  # first accepted particle
+            self.pbar = tqdm(total=self._calls_before_reset)
+
+        self.pbar.update()
+        self._num_calls += 1
+
+        if self._num_calls % self._calls_before_reset == 0:
+            # last accepted particle
+            self.pbar.close()
+            self.pbar = None
+
+        return s
 
 
 def general_rejection_sample(
@@ -350,6 +436,8 @@ def rejection_sample(
     sim: Simulator,
     observation_matches: Callable[[Observation, Observation], bool],
     n: int,
+    process_acpt: ProcessAccepted,
+    process_rej: ProcessRejected,
     initial_state_distribution: StateDistribution,
     a: Action,
     o: Observation,
@@ -367,6 +455,10 @@ def rejection_sample(
     :type observation_matches: Callable[[Observation, Observation], bool]
     :param n: size of particle filter to return
     :type n: int
+    :param process_acpt: function to call when accepting a sample
+    :type process_acpt: ProcessAccepted
+    :param process_rej: function to call when rejecting a sample
+    :type process_rej: ProcessRejected
     :param initial_state_distribution: current / previous belief
     :type initial_state_distribution: StateDistribution
     :param a: taken action
@@ -394,6 +486,8 @@ def rejection_sample(
             accept_function=accept_func,
             distr=initial_state_distribution,
             n=n,
+            process_accepted=process_acpt,
+            process_rejected=process_rej,
         )
     )
 
@@ -402,20 +496,39 @@ def create_rejection_sampling(
     sim: Simulator,
     n: int,
     observation_matches: Callable[[Observation, Observation], bool] = eq,
+    process_acpt: ProcessAccepted = accept_noop,
+    process_rej: ProcessRejected = reject_noop,
 ) -> BeliefUpdate:
-    """Creates a rejection sampling :py:class:`pomdp_belief_tracking.types.BeliefUpdate`
-
-    Takes the ``sim`` and number of desired particles ``n`` to return a
-    function that can update the belief.
-
-    :param sim: POMDP dynamics simulator
+    """Partial function that returns a regular RS belief update
+    A simple wrapper around :py:func:`rejection_sample`
+    :param sim: A
     :type sim: Simulator
-    :param n: number of desired samples
+    :param n: number of samples to accept
     :type n: int
-    :param observation_matches: observation equality check, defaults simple_observation_equals
-    :type observation_matches: Callable[[Observation, Observation], bool]
-    :return: rejection sampling belief update
+    :param observation_matches: method to test equality between observations, defaults to eq
+    :type observation_matches: Optional[Callable[[Observation, Observation], bool]]
+    :param process_acpt: method to call upon accepting a sample, defaults to accept_noop
+    :type process_acpt: Optional[ProcessAccepted]
+    :param process_rej: method to call upon rejecting a sample, defaults to reject_noop
+    :type process_rej: Optional[ProcessRejected]
+    :return: rejection sampling for POMDPs
     :rtype: BeliefUpdate
     """
 
-    return partial(rejection_sample, sim, observation_matches, n)
+    def rs(
+        p: StateDistribution,
+        a: Action,
+        o: Observation,
+    ) -> ParticleFilter:
+        return rejection_sample(
+            sim,
+            observation_matches,
+            n,
+            process_acpt,
+            process_rej,
+            p,
+            a,
+            o,
+        )
+
+    return rs

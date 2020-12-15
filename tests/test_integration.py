@@ -1,11 +1,9 @@
 #!/usr/bin/env python
 """Tests full belief updates or other larger components"""
-
-
 import random
 from typing import Tuple
 
-from pomdp_belief_tracking.pf import ParticleFilter, create_rejection_sampling
+from pomdp_belief_tracking.pf import CountAcceptedSamples, ParticleFilter, create_rejection_sampling
 from pomdp_belief_tracking.types import Action, Observation, State
 
 
@@ -59,16 +57,24 @@ def tiger_right_belief():
 def test_rejection_sampling():
     """tests :py:func:`~online_pomdp_planning.mcts.create_POUCT` on Tiger"""
 
-    belief_update = create_rejection_sampling(Tiger.sim, n=100)
+    count_accepts = CountAcceptedSamples()
+    count_rejects = CountAcceptedSamples()
+    belief_update = create_rejection_sampling(
+        Tiger.sim, 100, process_acpt=count_accepts, process_rej=count_rejects
+    )
 
     b = belief_update(uniform_tiger_belief, Tiger.H, Tiger.L)
 
     assert isinstance(b, ParticleFilter)
     assert Tiger.L in b and Tiger.R in b
     assert b.probability_of(Tiger.L) > b.probability_of(Tiger.R)
+    assert count_accepts.count == 100
+    assert 50 < count_rejects.count < 150
 
     b = belief_update(uniform_tiger_belief, Tiger.H, Tiger.R)
 
     assert isinstance(b, ParticleFilter)
     assert Tiger.L in b and Tiger.R in b
     assert b.probability_of(Tiger.L) < b.probability_of(Tiger.R)
+    assert 100 < count_rejects.count < 300
+    assert count_accepts.count == 200

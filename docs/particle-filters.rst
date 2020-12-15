@@ -30,11 +30,21 @@ provide rejection sampling:
 .. autofunction:: pomdp_belief_tracking.pf.rejection_sample
    :noindex:
 
-Which can best be created through
+Which can best be created, given a simulator and observation equality function
+through::
+
+    partial(rejection_sample, sim, observation_matches, num_samples)
+
 
 .. autofunction:: pomdp_belief_tracking.pf.create_rejection_sampling
    :noindex:
 
+This package provides some useful functions to extend the belief update. Most
+notably:
+
+- For :py:class:`~pomdp_belief_tracking.pf.rejection_sample`
+    - :py:class:`~pomdp_belief_tracking.pf.CountAcceptedSamples`
+    - :py:class:`~pomdp_belief_tracking.pf.AcceptionProgressBar`
 
 .. [particle-filtering] Djuric, P. M., Kotecha, J. H., Zhang, J., Huang, Y.,
    Ghirmai, T., Bugallo, M. F., & Miguez, J. (2003). Particle filtering. IEEE
