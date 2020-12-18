@@ -38,6 +38,8 @@ class Tiger:
             o = Tiger.sample_observation(s)
             return s, o
 
+        assert a in [Tiger.L, Tiger.R]
+
         o = random.choice([Tiger.L, Tiger.R])
         s = random.choice([Tiger.L, Tiger.R])
 
@@ -81,3 +83,11 @@ def test_rejection_sampling():
     assert b.probability_of(Tiger.L) < b.probability_of(Tiger.R)
     assert info["num_accepted"] == 100
     assert 50 < info["iteration"] - info["num_accepted"] < 150
+
+    b, info = belief_update(tiger_right_belief, Tiger.H, Tiger.L)
+    assert Tiger.L not in b and Tiger.R in b
+    assert info["num_accepted"] == 100
+
+    b, info = belief_update(tiger_right_belief, Tiger.L, Tiger.L)
+    assert Tiger.L in b and Tiger.R in b
+    assert info["num_accepted"] == 100

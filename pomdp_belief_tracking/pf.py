@@ -394,7 +394,6 @@ class AcceptionProgressBar(ProcessAccepted):
             self.pbar = tqdm(total=self._total_expected_calls)
 
         assert self.pbar
-
         self.pbar.update()
 
         if info["num_accepted"] == self._total_expected_calls - 1:
@@ -459,12 +458,12 @@ def general_rejection_sample(
         proposal, proposal_info = proposal_distr(sample, info)
 
         if accept_function(proposal, proposal_info, info):
-            sample = process_accepted(sample, proposal_info, info)
+            proposal = process_accepted(proposal, proposal_info, info)
 
-            accepted.append(sample)
+            accepted.append(proposal)
             info["num_accepted"] += 1
         else:
-            process_rejected(sample, proposal_info, info)
+            process_rejected(proposal, proposal_info, info)
 
         info["iteration"] += 1
 
