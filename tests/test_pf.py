@@ -1,13 +1,18 @@
 #!/usr/bin/env python
 """Tests for :py:class:`pomdp_belief_tracking.pf` module."""
 
-
 import random
+from functools import partial
 from operator import eq
 
 import pytest  # type: ignore
 
-from pomdp_belief_tracking.pf import Particle, ParticleFilter, general_rejection_sample
+from pomdp_belief_tracking.pf import (
+    Particle,
+    ParticleFilter,
+    general_rejection_sample,
+    have_sampled_enough,
+)
 
 
 def test_pf_data_model():
@@ -119,8 +124,30 @@ def test_pf_call():
     assert samples.count(10) > samples.count(-1)
 
 
+@pytest.mark.parametrize(
+    "num_desired,num_accepted,expected",
+    [(5, 4, False), (5, 5, True), (10, 1, False), (10, 100, True)],
+)
+def test_have_sampled_enough(num_desired, num_accepted, expected):
+    """Tests :py:func:`~pomdp_belief_tracking.pf.have_sampled_enough`"""
+    assert have_sampled_enough(num_desired, {"num_accepted": num_accepted}) == expected
+
+
+def test_have_sampled_edge_cases():
+    """Tests :py:func:`~pomdp_belief_tracking.pf.have_sampled_enough` edge cases"""
+
+    with pytest.raises(AssertionError):
+        have_sampled_enough(-1, {"num_accepted": 10})
+
+    with pytest.raises(AssertionError):
+        have_sampled_enough(0, {"num_accepted": 10})
+
+    with pytest.raises(AssertionError):
+        have_sampled_enough(10, {"num_accepted": -1})
+
+
 def test_general_rejection_sample():
-    """Tests :py:funct:`~pomdp_belief_tracking.pf.general_rejection_sample`"""
+    """Tests :py:func:`~pomdp_belief_tracking.pf.general_rejection_sample`"""
 
     def distr():
         return random.choice([[10], [3]])
@@ -137,11 +164,21 @@ def test_general_rejection_sample():
         return x
 
     with pytest.raises(AssertionError):
-        general_rejection_sample(proposal, accept_function, distr, 0, process_accepted)
+        general_rejection_sample(
+            partial(have_sampled_enough, 0),
+            proposal,
+            accept_function,
+            distr,
+            process_accepted,
+        )
 
     desired_samples = 8
     samples, info = general_rejection_sample(
-        proposal, accept_function, distr, desired_samples, process_accepted
+        partial(have_sampled_enough, desired_samples),
+        proposal,
+        accept_function,
+        distr,
+        process_accepted,
     )
 
     assert (
@@ -165,10 +202,10 @@ def test_general_rejection_sample():
         return x
 
     samples, _ = general_rejection_sample(
+        partial(have_sampled_enough, 20),
         proposal,
         accept_function,
         distr_no_copy,
-        20,
         process_accepted,
         process_rejected_reset,
     )
@@ -185,10 +222,10 @@ def test_general_rejection_sample():
     start_samples = [[10], [3]]
 
     samples, _ = general_rejection_sample(
+        partial(have_sampled_enough, 20),
         proposal,
         accept_function,
         distr_no_copy,
-        20,
         process_accepted_copy,
         process_rejected_reset,
     )
@@ -200,10 +237,10 @@ def test_general_rejection_sample():
         return True
 
     samples, info = general_rejection_sample(
+        partial(have_sampled_enough, 20),
         proposal,
         accept_all_function,
         distr_no_copy,
-        20,
         process_accepted_copy,
         process_rejected_reset,
     )

@@ -12,6 +12,7 @@ functions to update them:
 
 from __future__ import annotations
 
+from functools import partial
 from math import isclose
 from operator import eq
 from random import uniform
@@ -207,6 +208,40 @@ class ParticleFilter:
         )
 
 
+class StopCondition(Protocol):
+    """Whether to 'stop' sampling protocol"""
+
+    def __call__(self, info: Info) -> bool:
+        """The signature for the sampling stop condition
+
+        This function is called at the start of each sampling attempt, provided
+        some runtime ``info``, this function decides whether to continue
+        sampling
+
+        :param info: run time information
+        :type info: Info
+        :return: true if the condition for stopping is met
+        :rtype: bool
+        """
+
+
+def have_sampled_enough(desired_num: int, info: Info) -> bool:
+    """Returns ``true`` if "num_accepted" in ``info`` has reached ``desired_num``
+
+    Given ``desired_num``, this implements :py:class`StopCondition`
+
+    :param desired_num: number of desired samples
+    :type desired_num: int
+    :param info: run time info (should have an entry "num_accepted" -> int)
+    :type info: Info
+    :return: true if number of accepted samples is greater or equal to ``desired_num``
+    :rtype: bool
+    """
+    assert desired_num > 0 and info["num_accepted"] >= 0
+
+    return desired_num <= info["num_accepted"]
+
+
 Sample = TypeVar("Sample")
 
 
@@ -370,10 +405,10 @@ class AcceptionProgressBar(ProcessAccepted):
 
 
 def general_rejection_sample(
+    stop_condition: StopCondition,
     proposal_distr: ProposalDistribution,
     accept_function: AcceptFunction,
     distr: Callable[[], State],
-    n: int,
     process_accepted: ProcessAccepted = accept_noop,
     process_rejected: ProcessRejected = reject_noop,
 ) -> Tuple[List[State], Info]:
@@ -383,10 +418,11 @@ def general_rejection_sample(
     using this implementation. The input of this function is supposed to allow
     any type of advanced usage of rejection sampling. The underlying code is as follows::
 
-        sample ~ distr
-        update = proposal_distr(sample)
-        if accept_function(sample):
-            add sample
+        while not stop_condition:
+            sample ~ distr
+            update = proposal_distr(sample)
+            if accept_function(sample):
+                add sample
 
     Here we allow process functions to do extra processing on rejected and
     accepted samples. This can be useful for optimization or methods that do
@@ -398,14 +434,14 @@ def general_rejection_sample(
     turn can populate or make use of the information. This is ultimately
     returned to the caller, allowing for reporting and such.
 
-    :param proposal_distr: theproposal update function of samples
+    :param stop_condition: the function controlling whether to stop sampling
+    :type stop_condition: StopCondition
+    :param proposal_distr: the proposal update function of samples
     :type proposal_distr: ProposalDistribution
     :param accept_function: decides whether samples are accepted
     :type accept_function: AcceptFunction
     :param distr: the initial distribution to sample from
     :type distr: Callable[[], State]
-    :param n: the number of samples
-    :type n: int
     :param process_accepted: how to process a sample once accepted, defaults to noop
     :type process_accepted: ProcessAccepted
     :param process_rejected: how to process a sample once rejected, defaults to noop
@@ -413,13 +449,11 @@ def general_rejection_sample(
     :return: a list of samples and run time info
     :rtype: Tuple[List[State], Info]
     """
-    assert n > 0
 
     info: Info = {"num_accepted": 0, "iteration": 0}
-
     accepted: List[State] = []
 
-    while len(accepted) != n:
+    while not stop_condition(info):
 
         sample = distr()
         proposal, proposal_info = proposal_distr(sample, info)
@@ -484,10 +518,10 @@ def rejection_sample(
         return observation_matches(o, ctx)
 
     particles, info = general_rejection_sample(
+        partial(have_sampled_enough, n),
         proposal_distr=transition_func,
         accept_function=accept_func,
         distr=initial_state_distribution,
-        n=n,
         process_accepted=process_acpt,
         process_rejected=process_rej,
     )

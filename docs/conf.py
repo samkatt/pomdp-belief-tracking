@@ -22,7 +22,7 @@ import sys
 
 sys.path.insert(0, os.path.abspath(".."))
 
-import pomdp_belief_tracking
+import pomdp_belief_tracking  # isort:skip
 
 # -- General configuration ---------------------------------------------
 
