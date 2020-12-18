@@ -43,7 +43,6 @@ This package provides some useful functions to extend the belief update. Most
 notably:
 
 - For :py:class:`~pomdp_belief_tracking.pf.rejection_sample`
-    - :py:class:`~pomdp_belief_tracking.pf.CountAcceptedSamples`
     - :py:class:`~pomdp_belief_tracking.pf.AcceptionProgressBar`
 
 .. [particle-filtering] Djuric, P. M., Kotecha, J. H., Zhang, J., Huang, Y.,

@@ -28,6 +28,10 @@ the following definition:
 .. automethod:: pomdp_belief_tracking.types.BeliefUpdate.__call__
    :noindex:
 
+Where :py:class:`~pomdp_belief_tracking.types.Info` is a dictionary that stores
+information or context that can be populated by the belief update for reporting
+and such.
+
 .. features
 
 .. toctree::

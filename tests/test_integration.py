@@ -3,7 +3,12 @@
 import random
 from typing import Tuple
 
-from pomdp_belief_tracking.pf import CountAcceptedSamples, ParticleFilter, create_rejection_sampling
+from pomdp_belief_tracking.pf import (
+    ParticleFilter,
+    accept_noop,
+    create_rejection_sampling,
+    reject_noop,
+)
 from pomdp_belief_tracking.types import Action, Observation, State
 
 
@@ -57,24 +62,22 @@ def tiger_right_belief():
 def test_rejection_sampling():
     """tests :py:func:`~online_pomdp_planning.mcts.create_POUCT` on Tiger"""
 
-    count_accepts = CountAcceptedSamples()
-    count_rejects = CountAcceptedSamples()
     belief_update = create_rejection_sampling(
-        Tiger.sim, 100, process_acpt=count_accepts, process_rej=count_rejects
+        Tiger.sim, 100, process_acpt=accept_noop, process_rej=reject_noop
     )
 
-    b = belief_update(uniform_tiger_belief, Tiger.H, Tiger.L)
+    b, info = belief_update(uniform_tiger_belief, Tiger.H, Tiger.L)
 
     assert isinstance(b, ParticleFilter)
     assert Tiger.L in b and Tiger.R in b
     assert b.probability_of(Tiger.L) > b.probability_of(Tiger.R)
-    assert count_accepts.count == 100
-    assert 50 < count_rejects.count < 150
+    assert info["num_accepted"] == 100
+    assert 50 < info["iteration"] - info["num_accepted"] < 150
 
-    b = belief_update(uniform_tiger_belief, Tiger.H, Tiger.R)
+    b, info = belief_update(uniform_tiger_belief, Tiger.H, Tiger.R)
 
     assert isinstance(b, ParticleFilter)
     assert Tiger.L in b and Tiger.R in b
     assert b.probability_of(Tiger.L) < b.probability_of(Tiger.R)
-    assert 100 < count_rejects.count < 300
-    assert count_accepts.count == 200
+    assert info["num_accepted"] == 100
+    assert 50 < info["iteration"] - info["num_accepted"] < 150
