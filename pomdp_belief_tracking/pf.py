@@ -33,6 +33,7 @@ from typing_extensions import Protocol
 from pomdp_belief_tracking.types import (
     Action,
     BeliefUpdate,
+    Info,
     Observation,
     Simulator,
     State,
@@ -212,11 +213,13 @@ Sample = TypeVar("Sample")
 class ProposalDistribution(Protocol):
     """The signature for the proposal distribution for the general rejection sampling"""
 
-    def __call__(self, s: State) -> Tuple[State, Any]:
+    def __call__(self, s: State, info: Info) -> Tuple[State, Any]:
         """Proposes an 'updated' sample from some initial ``s``
 
         :param s: a sample at t
         :type s: State
+        :param info: run time information
+        :type info: Info
         :return: an updated sample at t+1 and any additional context
         :rtype: Tuple[State, Any]
         """
@@ -225,13 +228,15 @@ class ProposalDistribution(Protocol):
 class AcceptFunction(Protocol):
     """The signature of the acceptance function in general rejection sampling"""
 
-    def __call__(self, s: State, ctx: Any) -> bool:
+    def __call__(self, s: State, ctx: Any, info: Info) -> bool:
         """Returns whether the sample ``s`` is accepted given some context ``ctx``
 
         :param s: the updated sample to be tested
         :type s: State
         :param ctx: output of :py:func:`AcceptFunction`
         :type ctx: Any
+        :param info: run time information
+        :type info: Info
         :return: whether the sample is accepted
         :rtype: bool
         """
@@ -240,7 +245,7 @@ class AcceptFunction(Protocol):
 class ProcessRejected(Protocol):
     """A function that processes a rejected sample in general rejection sampling"""
 
-    def __call__(self, s: State, ctx: Any) -> None:
+    def __call__(self, s: State, ctx: Any, info: Info) -> None:
         """Processes a rejected sample ``s`` with some context ``ctx``
 
         An example usage could be that if, for optimizations sake, the sample
@@ -251,18 +256,22 @@ class ProcessRejected(Protocol):
         :type s: State
         :param ctx: output of :py:func:`AcceptFunction`
         :type ctx: Any
+        :param info: run time information
+        :type info: Info
         :return: Nothing, only side effects
         :rtype: None
         """
 
 
-def reject_noop(s: State, ctx: Any) -> None:  # pylint: disable=unused-argument
+def reject_noop(s: State, ctx: Any, info: Info) -> None:
     """A placeholder for :py:class:`ProcessRejected`: does nothing
 
     :param s: the accepted sample
     :type s: State
     :param ctx: the output of :py:func:`AcceptFunction`
     :type ctx: Any
+    :param info: run time information (ignored)
+    :type info: Info
     :return: Only side effects
     :rtype: None
     """
@@ -271,7 +280,7 @@ def reject_noop(s: State, ctx: Any) -> None:  # pylint: disable=unused-argument
 class ProcessAccepted(Protocol):
     """A function that processes an accepted sample in general rejection sampling"""
 
-    def __call__(self, s: State, ctx: Any) -> State:
+    def __call__(self, s: State, ctx: Any, info: Info) -> State:
         """Processes an accepted sample ``s`` with some context ``ctx``
 
         An example usage could be that if, for optimizations sake, the sample
@@ -282,37 +291,22 @@ class ProcessAccepted(Protocol):
         :type s: State
         :param ctx: output of :py:func:`AcceptFunction`
         :type ctx: Any
+        :param info: run time information
+        :type info: Info
         :return: processed sample
         :rtype: State
         """
 
 
-class CountAcceptedSamples(ProcessAccepted):
-    """Increments a counter whenever called
-
-    Can be used as :py:class:`ProcessAccepted` or :py:class:`ProcessRejected`
-    to count exceptions and rejections
-    """
-
-    def __init__(self):
-        """Initiates with zero counter"""
-        super().__init__()
-
-        self.count = 0
-
-    def __call__(self, s: State, ctx: Any) -> State:
-        """Increments counter"""
-        self.count += 1
-        return s
-
-
-def accept_noop(s: State, ctx: Any) -> State:  # pylint: disable=unused-argument
+def accept_noop(s: State, ctx: Any, info: Info) -> State:
     """A placeholder for :py:class:`ProcessAccepted`: does nothing
 
-    :param s: the accepted sample
+    :param s: the accepted sample (ignored)
     :type s: State
-    :param ctx: the output of :py:func:`AcceptFunction`
+    :param ctx: the output of :py:func:`AcceptFunction` (ignored)
     :type ctx: Any
+    :param info: run time information (ignored)
+    :type info: Info
     :return: ``s``
     :rtype: State
     """
@@ -339,18 +333,13 @@ class AcceptionProgressBar(ProcessAccepted):
         :type total_expected_samples: int
         """
         super().__init__()
-        self._calls_before_reset = total_expected_samples
-
-        # :py:class`AcceptionProgressBar` has 'state', in the sense that in
-        # order to tell ``tqdm`` when to start or stop the progress bar we
-        # actually track how often this is called.
-        self._num_calls = 0
+        self._total_expected_calls = total_expected_samples
 
         # ``tqdm`` starts the progress bar upon initiation. At this point the
         # belief update is not happening yet, so we do not want to print it
         self.pbar: Optional[tqdm] = None  # pylint: disable=unsubscriptable-object
 
-    def __call__(self, s: State, ctx: Any) -> State:
+    def __call__(self, s: State, ctx: Any, info: Info) -> State:
         """Called upon accepting a sample. Updates progress bar
 
         Closes bar upon reaching ``total_expected_samples``
@@ -359,19 +348,21 @@ class AcceptionProgressBar(ProcessAccepted):
         :type s: State
         :param ctx: context of acception (ignored)
         :type ctx: Any
+        :param info: run time information (# accepted samples)
+        :type info: Info
         :return: ``s`` as input
         :rtype: State
         """
-        if not self.pbar:  # first accepted particle
-            self.pbar = tqdm(total=self._calls_before_reset)
 
+        if info["num_accepted"] == 0:  # the first sample is accepted, LGTM
+
+            if self.pbar:  # handle previous open bar
+                self.pbar.close()
+
+            self.pbar = tqdm(total=self._total_expected_calls)
+
+        assert self.pbar
         self.pbar.update()
-        self._num_calls += 1
-
-        if self._num_calls % self._calls_before_reset == 0:
-            # last accepted particle
-            self.pbar.close()
-            self.pbar = None
 
         return s
 
@@ -383,7 +374,7 @@ def general_rejection_sample(
     n: int,
     process_accepted: ProcessAccepted = accept_noop,
     process_rejected: ProcessRejected = reject_noop,
-) -> List[State]:
+) -> Tuple[List[State], Info]:
     """General rejection sampling signature
 
     Our actual implementation of rejection sampling in particle filtering is
@@ -399,6 +390,12 @@ def general_rejection_sample(
     accepted samples. This can be useful for optimization or methods that do
     not **quite** fit this scheme.
 
+    Will create run time :py:class:`~pomdp_belief_tracking.types.Info` and
+    populate "iteration" -> # attempts and "num_accepted" -> # accepted
+    particles. This is passed through all the major components, so that they in
+    turn can populate or make use of the information. This is ultimately
+    returned to the caller, allowing for reporting and such.
+
     :param proposal_distr: theproposal update function of samples
     :type proposal_distr: ProposalDistribution
     :param accept_function: decides whether samples are accepted
@@ -411,25 +408,31 @@ def general_rejection_sample(
     :type process_accepted: ProcessAccepted
     :param process_rejected: how to process a sample once rejected, defaults to noop
     :type process_rejected: ProcessRejected
-    :return: a list of samples
-    :rtype: List[State]
+    :return: a list of samples and run time info
+    :rtype: Tuple[List[State], Info]
     """
     assert n > 0
+
+    info: Info = {"num_accepted": 0, "iteration": 0}
 
     accepted: List[State] = []
 
     while len(accepted) != n:
 
         sample = distr()
-        proposal, proposal_info = proposal_distr(sample)
+        proposal, proposal_info = proposal_distr(sample, info)
 
-        if accept_function(proposal, proposal_info):
-            sample = process_accepted(sample, proposal_info)
+        if accept_function(proposal, proposal_info, info):
+            sample = process_accepted(sample, proposal_info, info)
+
             accepted.append(sample)
+            info["num_accepted"] += 1
         else:
-            process_rejected(sample, proposal_info)
+            process_rejected(sample, proposal_info, info)
 
-    return accepted
+        info["iteration"] += 1
+
+    return accepted, info
 
 
 def rejection_sample(
@@ -441,7 +444,7 @@ def rejection_sample(
     initial_state_distribution: StateDistribution,
     a: Action,
     o: Observation,
-) -> ParticleFilter:
+) -> Tuple[ParticleFilter, Info]:
     """Implements rejection sampling
 
     Calls :py:func:`general_rejection_sample` with the appropriate members.
@@ -465,31 +468,29 @@ def rejection_sample(
     :type a: Action
     :param o: perceived observation
     :type o: Observation
-    :return: next belief
-    :rtype: ParticleFilter
+    :return: next belief and run time information
+    :rtype: Tuple[ParticleFilter, Info]
     """
     assert n > 0
 
-    def transition_func(s: State) -> Tuple[State, Observation]:
+    def transition_func(s: State, info: Info) -> Tuple[State, Observation]:
         """``sim`` with given ``a``"""
         return sim(s, a)
 
-    def accept_func(
-        s: State, ctx: Observation  # pylint: disable=unused-argument
-    ) -> bool:
+    def accept_func(s: State, ctx: Observation, info: Info) -> bool:
         """Accept samples with same observation"""
         return observation_matches(o, ctx)
 
-    return ParticleFilter(
-        general_rejection_sample(
-            proposal_distr=transition_func,
-            accept_function=accept_func,
-            distr=initial_state_distribution,
-            n=n,
-            process_accepted=process_acpt,
-            process_rejected=process_rej,
-        )
+    particles, info = general_rejection_sample(
+        proposal_distr=transition_func,
+        accept_function=accept_func,
+        distr=initial_state_distribution,
+        n=n,
+        process_accepted=process_acpt,
+        process_rejected=process_rej,
     )
+
+    return ParticleFilter(particles), info
 
 
 def create_rejection_sampling(
@@ -519,7 +520,7 @@ def create_rejection_sampling(
         p: StateDistribution,
         a: Action,
         o: Observation,
-    ) -> ParticleFilter:
+    ) -> Tuple[ParticleFilter, Info]:
         return rejection_sample(
             sim,
             observation_matches,

@@ -1,6 +1,6 @@
 """Defines some types for ease of reading"""
 
-from typing import Tuple
+from typing import Any, Dict, Tuple
 
 from typing_extensions import Protocol
 
@@ -54,12 +54,16 @@ class StateDistribution(Protocol):
         """
 
 
+Info = Dict[str, Any]
+"""The datatype used for information flow from implementation to caller"""
+
+
 class BeliefUpdate(Protocol):
     """The signature for belief updates"""
 
     def __call__(
         self, p: StateDistribution, a: Action, o: Observation
-    ) -> StateDistribution:
+    ) -> Tuple[StateDistribution, Info]:
         """Updates the distribution `p` given an action and observation
 
         :param p: current distribution
@@ -69,7 +73,7 @@ class BeliefUpdate(Protocol):
         :param o: perceived observation
         :type o: Observation
         :return: next distribution
-        :rtype: StateDistribution
+        :rtype: Tuple[StateDistribution, Info]
         """
 
 
@@ -92,7 +96,7 @@ class Belief:
         :return: Side effect: updates in place
         :rtype: None
         """
-        self.distribution = self.update_function(self.distribution, a, o)
+        self.distribution = self.update_function(self.distribution, a, o)[0]
 
     def sample(self) -> State:
         """Samples from its distribution
