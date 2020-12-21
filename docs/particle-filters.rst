@@ -20,21 +20,28 @@ them as containers.
    :special-members: __call__, __len__, __contains__, __iter__
    :noindex:
 
-------------------------------
-Particle filter belief updates
-------------------------------
-
 Particle filtering techniques are popular and available in large varieties. We
-provide rejection sampling:
+provide:
+
+- :py:func:`~pomdp_belief_tracking.pf.general_rejection_sample`
+
+------------------
+Rejection Sampling
+------------------
+
+We provide a general implementation of rejection sampling:
+
+.. autofunction:: pomdp_belief_tracking.pf.general_rejection_sample
+   :noindex:
+
+Our belief update version of rejection sampling calls this function with the
+appropriate parameters:
 
 .. autofunction:: pomdp_belief_tracking.pf.rejection_sample
    :noindex:
 
-Which can best be created, given a simulator and observation equality function
-through::
-
-    partial(rejection_sample, sim, observation_matches, num_samples)
-
+Which can best be created through our construction function (with sane
+defaults, otherwise you can also apply partial):
 
 .. autofunction:: pomdp_belief_tracking.pf.create_rejection_sampling
    :noindex:

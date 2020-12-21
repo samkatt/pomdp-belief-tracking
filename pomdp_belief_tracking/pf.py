@@ -419,9 +419,9 @@ def general_rejection_sample(
 
         while not stop_condition:
             sample ~ distr
-            update = proposal_distr(sample)
-            if accept_function(sample):
-                add sample
+            proposal = proposal_distr(sample)
+            if accept_function(proposal):
+                add proposal
 
     Here we allow process functions to do extra processing on rejected and
     accepted samples. This can be useful for optimization or methods that do
@@ -441,9 +441,9 @@ def general_rejection_sample(
     :type accept_function: AcceptFunction
     :param distr: the initial distribution to sample from
     :type distr: Callable[[], State]
-    :param process_accepted: how to process a sample once accepted, defaults to noop
+    :param process_accepted: how to process a sample once accepted, defaults to :py:func:`accept_noop`
     :type process_accepted: ProcessAccepted
-    :param process_rejected: how to process a sample once rejected, defaults to noop
+    :param process_rejected: how to process a sample once rejected, defaults to :py:func:`reject_noop`
     :type process_rejected: ProcessRejected
     :return: a list of samples and run time info
     :rtype: Tuple[List[State], Info]
@@ -535,17 +535,19 @@ def create_rejection_sampling(
     process_acpt: ProcessAccepted = accept_noop,
     process_rej: ProcessRejected = reject_noop,
 ) -> BeliefUpdate:
-    """Partial function that returns a regular RS belief update
+    """ Partial function that returns a regular RS belief update
+
     A simple wrapper around :py:func:`rejection_sample`
-    :param sim: A
+
+    :param sim: generative POMDP
     :type sim: Simulator
     :param n: number of samples to accept
     :type n: int
     :param observation_matches: method to test equality between observations, defaults to eq
     :type observation_matches: Optional[Callable[[Observation, Observation], bool]]
-    :param process_acpt: method to call upon accepting a sample, defaults to accept_noop
+    :param process_acpt: method to call upon accepting a sample, defaults to :py:func:`accept_noop`
     :type process_acpt: Optional[ProcessAccepted]
-    :param process_rej: method to call upon rejecting a sample, defaults to reject_noop
+    :param process_rej: method to call upon rejecting a sample, defaults to :py:func:`reject_noop`
     :type process_rej: Optional[ProcessRejected]
     :return: rejection sampling for POMDPs
     :rtype: BeliefUpdate
