@@ -1,13 +1,13 @@
 """Particle Filters and their update functions
 
 Particle filters are approximations of distributions. They represent them
-through :py:class:`Particle`, a :py:class:`~pomdp_belief_tracking.types.State`
+through :class:`Particle`, a :class:`~pomdp_belief_tracking.types.State`
 with a relative weight.
 
-In this module we implement such a :py:class:`ParticleFilter` and some
+In this module we implement such a :class:`ParticleFilter` and some
 functions to update them:
 
-    - :py:func:`rejection_sample`
+    - :func:`rejection_sample`
 """
 
 from __future__ import annotations
@@ -118,7 +118,7 @@ class ParticleFilter:
         Allows for ``s in particle_filter`` syntax
 
         :param item: the item to check for
-        :type item: hopefully :py:class:`~pomdp_belief_tracking.types.State`
+        :type item: hopefully :class:`~pomdp_belief_tracking.types.State`
         """
         return any(item == particle.state for particle in self.particles)
 
@@ -228,7 +228,7 @@ class StopCondition(Protocol):
 def have_sampled_enough(desired_num: int, info: Info) -> bool:
     """Returns ``true`` if "num_accepted" in ``info`` has reached ``desired_num``
 
-    Given ``desired_num``, this implements :py:class`StopCondition`
+    Given ``desired_num``, this implements :class`StopCondition`
 
     :param desired_num: number of desired samples
     :type desired_num: int
@@ -268,7 +268,7 @@ class AcceptFunction(Protocol):
 
         :param s: the updated sample to be tested
         :type s: State
-        :param ctx: output of :py:func:`AcceptFunction`
+        :param ctx: output of :func:`AcceptFunction`
         :type ctx: Any
         :param info: run time information
         :type info: Info
@@ -289,7 +289,7 @@ class ProcessRejected(Protocol):
 
         :param s: the rejected sample
         :type s: State
-        :param ctx: output of :py:func:`AcceptFunction`
+        :param ctx: output of :func:`AcceptFunction`
         :type ctx: Any
         :param info: run time information
         :type info: Info
@@ -299,11 +299,11 @@ class ProcessRejected(Protocol):
 
 
 def reject_noop(s: State, ctx: Any, info: Info) -> None:
-    """A placeholder for :py:class:`ProcessRejected`: does nothing
+    """A placeholder for :class:`ProcessRejected`: does nothing
 
     :param s: the accepted sample
     :type s: State
-    :param ctx: the output of :py:func:`AcceptFunction`
+    :param ctx: the output of :func:`AcceptFunction`
     :type ctx: Any
     :param info: run time information (ignored)
     :type info: Info
@@ -324,7 +324,7 @@ class ProcessAccepted(Protocol):
 
         :param s: accepted sample
         :type s: State
-        :param ctx: output of :py:func:`AcceptFunction`
+        :param ctx: output of :func:`AcceptFunction`
         :type ctx: Any
         :param info: run time information
         :type info: Info
@@ -334,11 +334,11 @@ class ProcessAccepted(Protocol):
 
 
 def accept_noop(s: State, ctx: Any, info: Info) -> State:
-    """A placeholder for :py:class:`ProcessAccepted`: does nothing
+    """A placeholder for :class:`ProcessAccepted`: does nothing
 
     :param s: the accepted sample (ignored)
     :type s: State
-    :param ctx: the output of :py:func:`AcceptFunction` (ignored)
+    :param ctx: the output of :func:`AcceptFunction` (ignored)
     :type ctx: Any
     :param info: run time information (ignored)
     :type info: Info
@@ -349,7 +349,7 @@ def accept_noop(s: State, ctx: Any, info: Info) -> State:
 
 
 class AcceptionProgressBar(ProcessAccepted):
-    """A :py:class:`ProcessAccepted` call that prints out a progress bar
+    """A :class:`ProcessAccepted` call that prints out a progress bar
 
     The progress bar is printed by ``tqdm``, and will magnificently fail if
     something else is printed or logged during.
@@ -427,7 +427,7 @@ def general_rejection_sample(
     accepted samples. This can be useful for optimization or methods that do
     not **quite** fit this scheme.
 
-    Will create run time :py:class:`~pomdp_belief_tracking.types.Info` and
+    Will create run time :class:`~pomdp_belief_tracking.types.Info` and
     populate "iteration" -> # attempts and "num_accepted" -> # accepted
     particles. This is passed through all the major components, so that they in
     turn can populate or make use of the information. This is ultimately
@@ -441,9 +441,9 @@ def general_rejection_sample(
     :type accept_function: AcceptFunction
     :param distr: the initial distribution to sample from
     :type distr: Callable[[], State]
-    :param process_accepted: how to process a sample once accepted, defaults to :py:func:`accept_noop`
+    :param process_accepted: how to process a sample once accepted, default :func:`accept_noop`
     :type process_accepted: ProcessAccepted
-    :param process_rejected: how to process a sample once rejected, defaults to :py:func:`reject_noop`
+    :param process_rejected: how to process a sample once rejected, default :func:`reject_noop`
     :type process_rejected: ProcessRejected
     :return: a list of samples and run time info
     :rtype: Tuple[List[State], Info]
@@ -482,10 +482,10 @@ def rejection_sample(
 ) -> Tuple[ParticleFilter, Info]:
     """Implements rejection sampling
 
-    Calls :py:func:`general_rejection_sample` with the appropriate members.
+    Calls :func:`general_rejection_sample` with the appropriate members.
     Creates a proposal function that calls ``sim`` on a ``state`` and given
     ``a`` and accepts the sample if the simulated observation equals ``o``.
-    Finally wraps the returns list of particles in a :py:class`ParticleFilter`
+    Finally wraps the returns list of particles in a :class`ParticleFilter`
 
     :param sim: POMDP dynamics simulator
     :type sim: Simulator
@@ -535,9 +535,9 @@ def create_rejection_sampling(
     process_acpt: ProcessAccepted = accept_noop,
     process_rej: ProcessRejected = reject_noop,
 ) -> BeliefUpdate:
-    """ Partial function that returns a regular RS belief update
+    """Partial function that returns a regular RS belief update
 
-    A simple wrapper around :py:func:`rejection_sample`
+    A simple wrapper around :func:`rejection_sample`
 
     :param sim: generative POMDP
     :type sim: Simulator
@@ -545,9 +545,9 @@ def create_rejection_sampling(
     :type n: int
     :param observation_matches: method to test equality between observations, defaults to eq
     :type observation_matches: Optional[Callable[[Observation, Observation], bool]]
-    :param process_acpt: method to call upon accepting a sample, defaults to :py:func:`accept_noop`
+    :param process_acpt: method to call upon accepting a sample, defaults to :func:`accept_noop`
     :type process_acpt: Optional[ProcessAccepted]
-    :param process_rej: method to call upon rejecting a sample, defaults to :py:func:`reject_noop`
+    :param process_rej: method to call upon rejecting a sample, defaults to :func:`reject_noop`
     :type process_rej: Optional[ProcessRejected]
     :return: rejection sampling for POMDPs
     :rtype: BeliefUpdate

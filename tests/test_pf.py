@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Tests for :py:class:`pomdp_belief_tracking.pf` module."""
+"""Tests for :class:`pomdp_belief_tracking.pf` module."""
 
 import random
 from functools import partial
@@ -16,7 +16,7 @@ from pomdp_belief_tracking.pf import (
 
 
 def test_pf_data_model():
-    """Tests :py:class:`~pomdp_belief_tracking.pf.ParticleFilter` container functions"""
+    """Tests :class:`~pomdp_belief_tracking.pf.ParticleFilter` container functions"""
     pf = ParticleFilter([0, 0, 0])
 
     assert len(pf) == 3
@@ -59,7 +59,7 @@ def test_pf_data_model():
 
 
 def test_pf_from_distribution():
-    """Tests :py:meth:`~pomdp_belief_tracking.pf.from_distribution`"""
+    """Tests :meth:`~pomdp_belief_tracking.pf.from_distribution`"""
 
     pf = ParticleFilter.from_distribution(lambda: 100, 5)
 
@@ -79,7 +79,7 @@ def test_pf_from_distribution():
 
 
 def test_pf_from_particles():
-    """Tests :py:meth:`~pomdp_belief_tracking.pf.from_particles`"""
+    """Tests :meth:`~pomdp_belief_tracking.pf.from_particles`"""
     particles = [Particle(4, 3.0), Particle(2, 9.0), Particle(4, 3.0)]
 
     pf = ParticleFilter.from_particles(particles)
@@ -97,12 +97,12 @@ def test_pf_from_particles():
     ],
 )
 def test_pf_total_weight(particles, total_weight):
-    """Tests :py:func:`~pomdp_belief_tracking.pf.ParticleFilter.total_weight`"""
+    """Tests :func:`~pomdp_belief_tracking.pf.ParticleFilter.total_weight`"""
     assert ParticleFilter.total_weight(particles) == total_weight
 
 
 def test_pf_call():
-    """Tests :py:meth:`~pomdp_belief_tracking.pf.ParticleFilter.__call__` to sample"""
+    """Tests :meth:`~pomdp_belief_tracking.pf.ParticleFilter.__call__` to sample"""
 
     pf = ParticleFilter([0, 0, 0])
     assert pf() == 0
@@ -129,12 +129,12 @@ def test_pf_call():
     [(5, 4, False), (5, 5, True), (10, 1, False), (10, 100, True)],
 )
 def test_have_sampled_enough(num_desired, num_accepted, expected):
-    """Tests :py:func:`~pomdp_belief_tracking.pf.have_sampled_enough`"""
+    """Tests :func:`~pomdp_belief_tracking.pf.have_sampled_enough`"""
     assert have_sampled_enough(num_desired, {"num_accepted": num_accepted}) == expected
 
 
 def test_have_sampled_edge_cases():
-    """Tests :py:func:`~pomdp_belief_tracking.pf.have_sampled_enough` edge cases"""
+    """Tests :func:`~pomdp_belief_tracking.pf.have_sampled_enough` edge cases"""
 
     with pytest.raises(AssertionError):
         have_sampled_enough(-1, {"num_accepted": 10})
@@ -147,7 +147,7 @@ def test_have_sampled_edge_cases():
 
 
 def test_general_rejection_sample():
-    """Tests :py:func:`~pomdp_belief_tracking.pf.general_rejection_sample`"""
+    """Tests :func:`~pomdp_belief_tracking.pf.general_rejection_sample`"""
 
     def distr():
         return random.choice([[10], [3]])
@@ -262,7 +262,7 @@ def test_general_rejection_sample():
     ],
 )
 def test_pf_probability_of(particles, equality, particle, prob):
-    """Tests :py:meth:`~pomdp_belief_tracking.pf.ParticleFilter.probability_of`"""
+    """Tests :meth:`~pomdp_belief_tracking.pf.ParticleFilter.probability_of`"""
     assert (
         ParticleFilter.from_particles(particles).probability_of(particle, equality)
         == prob

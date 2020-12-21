@@ -4,9 +4,9 @@ pomdp-belief-tracking
 
 This packages intends to be a library to be used by others. We identify two
 core components: belief representations and their updates. A
-:py:class:`~pomdp_belief_tracking.types.StateDistribution` is a distribution over the
-state that can be sampled from, while the
-:py:class:`~pomdp_belief_tracking.types.BeliefUpdate` takes a current belief,
+:class:`~pomdp_belief_tracking.types.StateDistribution` is a distribution over
+the state that can be sampled from, while the
+:class:`~pomdp_belief_tracking.types.BeliefUpdate` takes a current belief,
 action and observation and produces a next belief.
 
 .. beliefs
@@ -28,7 +28,7 @@ the following definition:
 .. automethod:: pomdp_belief_tracking.types.BeliefUpdate.__call__
    :noindex:
 
-Where :py:class:`~pomdp_belief_tracking.types.Info` is a dictionary that stores
+Where :class:`~pomdp_belief_tracking.types.Info` is a dictionary that stores
 information or context that can be populated by the belief update for reporting
 and such.
 
@@ -61,8 +61,8 @@ functional interface.
 However, the belief is a crucial part and must be represented by some data
 structure. Additionally not all belief updates can work with all beliefs. Hence
 it can be much to ask for users to update and maintain them by themselves. As a
-result, we provide an actual :py:class:`~pomdp_belief_tracking.types.Belief`
-that binds the two together.
+result, we provide an actual :class:`~pomdp_belief_tracking.types.Belief` that
+binds the two together.
 
 .. autoclass:: pomdp_belief_tracking.types.Belief
    :noindex:
@@ -90,7 +90,7 @@ used to allow type-checking and catching trivial bugs.
 
 .. `Belief` type
 
-A notable exception is the :py:class:`~pomdp_belief_tracking.types.Simulator`,
+A notable exception is the :class:`~pomdp_belief_tracking.types.Simulator`,
 which is assumed to a callable that samples transitions.
 
 .. automethod:: pomdp_belief_tracking.types.Belief.__call__

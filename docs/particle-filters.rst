@@ -3,9 +3,9 @@ Particle filters
 ================
 
 Particle filters (PF [particle-filtering]_) approximate distributions with
-**weighted particles**. A :py:class:`~pomdp_belief_tracking.pf.Particle` is a
-:py:class:`~pomdp_belief_tracking.types.State`, and the weight corresponds to
-its relative probability.
+**weighted particles**. A :class:`~pomdp_belief_tracking.pf.Particle` is a
+:class:`~pomdp_belief_tracking.types.State`, and the weight corresponds to its
+relative probability.
 
 .. autoclass:: pomdp_belief_tracking.pf.Particle
    :members:
@@ -23,7 +23,7 @@ them as containers.
 Particle filtering techniques are popular and available in large varieties. We
 provide:
 
-- :py:func:`~pomdp_belief_tracking.pf.general_rejection_sample`
+- :func:`~pomdp_belief_tracking.pf.general_rejection_sample`
 
 ------------------
 Rejection Sampling
@@ -49,8 +49,8 @@ defaults, otherwise you can also apply partial):
 This package provides some useful functions to extend the belief update. Most
 notably:
 
-- For :py:class:`~pomdp_belief_tracking.pf.rejection_sample`
-    - :py:class:`~pomdp_belief_tracking.pf.AcceptionProgressBar`
+- For :class:`~pomdp_belief_tracking.pf.rejection_sample`
+    - :class:`~pomdp_belief_tracking.pf.AcceptionProgressBar`
 
 .. [particle-filtering] Djuric, P. M., Kotecha, J. H., Zhang, J., Huang, Y.,
    Ghirmai, T., Bugallo, M. F., & Miguez, J. (2003). Particle filtering. IEEE

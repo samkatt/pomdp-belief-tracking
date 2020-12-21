@@ -62,7 +62,7 @@ def tiger_right_belief():
 
 
 def test_rejection_sampling():
-    """tests :py:func:`~online_pomdp_planning.mcts.create_POUCT` on Tiger"""
+    """tests :func:`~online_pomdp_planning.mcts.create_POUCT` on Tiger"""
 
     belief_update = create_rejection_sampling(
         Tiger.sim, 100, process_acpt=accept_noop, process_rej=reject_noop
