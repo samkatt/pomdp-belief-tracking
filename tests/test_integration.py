@@ -3,12 +3,7 @@
 import random
 from typing import Tuple
 
-from pomdp_belief_tracking.pf import (
-    ParticleFilter,
-    accept_noop,
-    create_rejection_sampling,
-    reject_noop,
-)
+from pomdp_belief_tracking.pf import particle_filter, rejection_sampling
 from pomdp_belief_tracking.types import Action, Observation, State
 
 
@@ -64,13 +59,16 @@ def tiger_right_belief():
 def test_rejection_sampling():
     """tests :func:`~online_pomdp_planning.mcts.create_POUCT` on Tiger"""
 
-    belief_update = create_rejection_sampling(
-        Tiger.sim, 100, process_acpt=accept_noop, process_rej=reject_noop
+    belief_update = rejection_sampling.create_rejection_sampling(
+        Tiger.sim,
+        100,
+        process_acpt=rejection_sampling.accept_noop,
+        process_rej=rejection_sampling.reject_noop,
     )
 
     b, info = belief_update(uniform_tiger_belief, Tiger.H, Tiger.L)
 
-    assert isinstance(b, ParticleFilter)
+    assert isinstance(b, particle_filter.ParticleFilter)
     assert Tiger.L in b and Tiger.R in b
     assert b.probability_of(Tiger.L) > b.probability_of(Tiger.R)
     assert info["num_accepted"] == 100
@@ -78,7 +76,7 @@ def test_rejection_sampling():
 
     b, info = belief_update(uniform_tiger_belief, Tiger.H, Tiger.R)
 
-    assert isinstance(b, ParticleFilter)
+    assert isinstance(b, particle_filter.ParticleFilter)
     assert Tiger.L in b and Tiger.R in b
     assert b.probability_of(Tiger.L) < b.probability_of(Tiger.R)
     assert info["num_accepted"] == 100
