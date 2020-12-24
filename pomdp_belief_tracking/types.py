@@ -17,6 +17,21 @@ class State(Protocol):
     """The abstract type representing states"""
 
 
+class TransitionFunction(Protocol):
+    """The signature for transition functions"""
+
+    def __call__(self, s: State, a: Action) -> State:
+        """A transition function is a (stochastic) mapping from s x a -> s
+
+        :param s: state at time step t
+        :type s: State
+        :param a: action at time step t
+        :type a: Action
+        :return: state at time step t + 1
+        :rtype: State
+        """
+
+
 class Simulator(Protocol):
     """The abstract type representing simulators
 

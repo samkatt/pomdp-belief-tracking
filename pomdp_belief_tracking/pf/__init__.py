@@ -9,4 +9,5 @@ In this module we implement such a
 functions to update them:
 
     - :func:`~pomdp_belief_tracking.pf.rejection_sampling.rejection_sample`
+    - :func:`~pomdp_belief_tracking.pf.importance_sampling.importance_sample`
 """

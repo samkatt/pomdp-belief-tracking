@@ -18,8 +18,7 @@ defaults, otherwise you can also apply partial):
 This package provides some useful functions to extend the belief update. Most
 notably:
 
-- For :class:`rejection_sample`
-    - :class:`AcceptionProgressBar`
+- :class:`AcceptionProgressBar`
 
 .. [particle-filtering] Djuric, P. M., Kotecha, J. H., Zhang, J., Huang, Y.,
    Ghirmai, T., Bugallo, M. F., & Miguez, J. (2003). Particle filtering. IEEE
@@ -38,6 +37,7 @@ from typing_extensions import Protocol
 
 import pomdp_belief_tracking.pf.particle_filter
 import pomdp_belief_tracking.pf.types
+from pomdp_belief_tracking.pf.particle_filter import ParticleFilter
 from pomdp_belief_tracking.types import (
     Action,
     BeliefUpdate,
@@ -230,7 +230,7 @@ def general_rejection_sample(
     stop_condition: StopCondition,
     proposal_distr: pomdp_belief_tracking.pf.types.ProposalDistribution,
     accept_function: AcceptFunction,
-    distr: Callable[[], State],
+    distr: StateDistribution,
     process_accepted: ProcessAccepted = accept_noop,
     process_rejected: ProcessRejected = reject_noop,
 ) -> Tuple[List[State], Info]:
@@ -263,7 +263,7 @@ def general_rejection_sample(
     :param accept_function: decides whether samples are accepted
     :type accept_function: AcceptFunction
     :param distr: the initial distribution to sample from
-    :type distr: Callable[[], State]
+    :type distr: StateDistribution
     :param process_accepted: how to process a sample once accepted, default :func:`accept_noop`
     :type process_accepted: ProcessAccepted
     :param process_rejected: how to process a sample once rejected, default :func:`reject_noop`
@@ -278,6 +278,7 @@ def general_rejection_sample(
     while not stop_condition(info):
 
         sample = distr()
+
         proposal, proposal_info = proposal_distr(sample, info)
 
         if accept_function(proposal, proposal_info, info):
@@ -302,7 +303,7 @@ def rejection_sample(
     initial_state_distribution: StateDistribution,
     a: Action,
     o: Observation,
-) -> Tuple[pomdp_belief_tracking.pf.particle_filter.ParticleFilter, Info]:
+) -> Tuple[ParticleFilter, Info]:
     """Implements rejection sampling
 
     Calls :func:`general_rejection_sample` with the appropriate members.
@@ -348,7 +349,7 @@ def rejection_sample(
         process_rejected=process_rej,
     )
 
-    return pomdp_belief_tracking.pf.particle_filter.ParticleFilter(particles), info
+    return ParticleFilter(particles), info
 
 
 def create_rejection_sampling(
@@ -380,7 +381,7 @@ def create_rejection_sampling(
         p: StateDistribution,
         a: Action,
         o: Observation,
-    ) -> Tuple[pomdp_belief_tracking.pf.particle_filter.ParticleFilter, Info]:
+    ) -> Tuple[ParticleFilter, Info]:
         return rejection_sample(
             sim,
             observation_matches,

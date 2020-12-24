@@ -20,6 +20,14 @@ pomdp\_belief\_tracking.pf.rejection\_sampling module
    :undoc-members:
    :show-inheritance:
 
+pomdp\_belief\_tracking.pf.importance\_sampling module
+------------------------------------------------------
+
+.. automodule:: pomdp_belief_tracking.pf.importance_sampling
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 pomdp\_belief\_tracking.pf.types module
 ---------------------------------------
 

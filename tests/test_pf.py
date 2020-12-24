@@ -7,12 +7,17 @@ from operator import eq
 
 import pytest  # type: ignore
 
-from pomdp_belief_tracking.pf import particle_filter, rejection_sampling
+from pomdp_belief_tracking.pf.importance_sampling import general_importance_sample
+from pomdp_belief_tracking.pf.particle_filter import Particle, ParticleFilter
+from pomdp_belief_tracking.pf.rejection_sampling import (
+    general_rejection_sample,
+    have_sampled_enough,
+)
 
 
 def test_pf_data_model():
     """Tests :class:`~pomdp_belief_tracking.pf.ParticleFilter` container functions"""
-    pf = particle_filter.ParticleFilter([0, 0, 0])
+    pf = ParticleFilter([0, 0, 0])
 
     assert len(pf) == 3
     assert 0 in pf
@@ -27,7 +32,7 @@ def test_pf_data_model():
         assert state == 0
         assert weight == 1 / 3
 
-    pf = particle_filter.ParticleFilter([True, 0])
+    pf = ParticleFilter([True, 0])
 
     assert len(pf) == 2
     assert 0 in pf
@@ -42,7 +47,7 @@ def test_pf_data_model():
         assert state or state == 0
         assert weight == 0.5
 
-    pf = particle_filter.ParticleFilter([])
+    pf = ParticleFilter([])
 
     assert len(pf) == 0
     assert 0 not in pf
@@ -56,19 +61,17 @@ def test_pf_data_model():
 def test_pf_from_distribution():
     """Tests :meth:`~pomdp_belief_tracking.pf.from_distribution`"""
 
-    pf = particle_filter.ParticleFilter.from_distribution(lambda: 100, 5)
+    pf = ParticleFilter.from_distribution(lambda: 100, 5)
 
     assert pf.particles == [
-        particle_filter.Particle(100, 0.2),
-        particle_filter.Particle(100, 0.2),
-        particle_filter.Particle(100, 0.2),
-        particle_filter.Particle(100, 0.2),
-        particle_filter.Particle(100, 0.2),
+        Particle(100, 0.2),
+        Particle(100, 0.2),
+        Particle(100, 0.2),
+        Particle(100, 0.2),
+        Particle(100, 0.2),
     ]
 
-    pf = particle_filter.ParticleFilter.from_distribution(
-        lambda: random.choice([3, -5]), 20
-    )
+    pf = ParticleFilter.from_distribution(lambda: random.choice([3, -5]), 20)
 
     assert 3 in pf
     assert -5 in pf
@@ -78,58 +81,56 @@ def test_pf_from_distribution():
 def test_pf_from_particles():
     """Tests :meth:`~pomdp_belief_tracking.pf.from_particles`"""
     particles = [
-        particle_filter.Particle(4, 3.0),
-        particle_filter.Particle(2, 9.0),
-        particle_filter.Particle(4, 3.0),
+        Particle(4, 3.0),
+        Particle(2, 9.0),
+        Particle(4, 3.0),
     ]
 
-    pf = particle_filter.ParticleFilter.from_particles(particles)
+    pf = ParticleFilter.from_particles(particles)
 
     assert pf.particles == [
-        particle_filter.Particle(4, 0.2),
-        particle_filter.Particle(2, 0.6),
-        particle_filter.Particle(4, 0.2),
+        Particle(4, 0.2),
+        Particle(2, 0.6),
+        Particle(4, 0.2),
     ]
 
 
 @pytest.mark.parametrize(
     "particles,total_weight",
     [
-        ([particle_filter.Particle(2, 10.0)], 10.0),
-        ([particle_filter.Particle(2, 3.2)], 3.2),
+        ([Particle(2, 10.0)], 10.0),
+        ([Particle(2, 3.2)], 3.2),
         (
-            [particle_filter.Particle(2, 10.0), particle_filter.Particle(False, 30.0)],
+            [Particle(2, 10.0), Particle(False, 30.0)],
             40.0,
         ),
-        ([particle_filter.Particle(2, 10.0), particle_filter.Particle(2, 30.0)], 40.0),
+        ([Particle(2, 10.0), Particle(2, 30.0)], 40.0),
     ],
 )
 def test_pf_total_weight(particles, total_weight):
     """Tests :func:`~pomdp_belief_tracking.pf.ParticleFilter.total_weight`"""
-    assert particle_filter.ParticleFilter.total_weight(particles) == total_weight
+    assert ParticleFilter.total_weight(particles) == total_weight
 
 
 def test_pf_call():
     """Tests :meth:`~pomdp_belief_tracking.pf.ParticleFilter.__call__` to sample"""
 
-    pf = particle_filter.ParticleFilter([0, 0, 0])
+    pf = ParticleFilter([0, 0, 0])
     assert pf() == 0
 
-    pf = particle_filter.ParticleFilter.from_particles(
-        [particle_filter.Particle(10, 100000.0), particle_filter.Particle(-1, 1.0)]
-    )
+    pf = ParticleFilter.from_particles([Particle(10, 100000.0), Particle(-1, 1.0)])
     assert pf() == 10
 
-    pf = particle_filter.ParticleFilter([True, 0])
+    pf = ParticleFilter([True, 0])
     samples = [pf() for _ in range(100)]
     assert True in samples
     assert 0 in samples
 
-    pf = particle_filter.ParticleFilter.from_particles(
+    pf = ParticleFilter.from_particles(
         [
-            particle_filter.Particle(10, 1),
-            particle_filter.Particle(-1, 1),
-            particle_filter.Particle(10, 1),
+            Particle(10, 1),
+            Particle(-1, 1),
+            Particle(10, 1),
         ]
     )
     samples = [pf() for _ in range(100)]
@@ -144,25 +145,20 @@ def test_pf_call():
 )
 def test_have_sampled_enough(num_desired, num_accepted, expected):
     """Tests :func:`~pomdp_belief_tracking.pf.have_sampled_enough`"""
-    assert (
-        rejection_sampling.have_sampled_enough(
-            num_desired, {"num_accepted": num_accepted}
-        )
-        == expected
-    )
+    assert have_sampled_enough(num_desired, {"num_accepted": num_accepted}) == expected
 
 
 def test_have_sampled_edge_cases():
     """Tests :func:`~pomdp_belief_tracking.pf.have_sampled_enough` edge cases"""
 
     with pytest.raises(AssertionError):
-        rejection_sampling.have_sampled_enough(-1, {"num_accepted": 10})
+        have_sampled_enough(-1, {"num_accepted": 10})
 
     with pytest.raises(AssertionError):
-        rejection_sampling.have_sampled_enough(0, {"num_accepted": 10})
+        have_sampled_enough(0, {"num_accepted": 10})
 
     with pytest.raises(AssertionError):
-        rejection_sampling.have_sampled_enough(10, {"num_accepted": -1})
+        have_sampled_enough(10, {"num_accepted": -1})
 
 
 def test_general_rejection_sample():
@@ -183,8 +179,8 @@ def test_general_rejection_sample():
         return x
 
     with pytest.raises(AssertionError):
-        rejection_sampling.general_rejection_sample(
-            partial(rejection_sampling.have_sampled_enough, 0),
+        general_rejection_sample(
+            partial(have_sampled_enough, 0),
             proposal,
             accept_function,
             distr,
@@ -192,8 +188,8 @@ def test_general_rejection_sample():
         )
 
     desired_samples = 8
-    samples, info = rejection_sampling.general_rejection_sample(
-        partial(rejection_sampling.have_sampled_enough, desired_samples),
+    samples, info = general_rejection_sample(
+        partial(have_sampled_enough, desired_samples),
         proposal,
         accept_function,
         distr,
@@ -220,8 +216,8 @@ def test_general_rejection_sample():
         x[0] -= 2
         return x
 
-    samples, _ = rejection_sampling.general_rejection_sample(
-        partial(rejection_sampling.have_sampled_enough, 20),
+    samples, _ = general_rejection_sample(
+        partial(have_sampled_enough, 20),
         proposal,
         accept_function,
         distr_no_copy,
@@ -240,8 +236,8 @@ def test_general_rejection_sample():
 
     start_samples = [[10], [3]]
 
-    samples, _ = rejection_sampling.general_rejection_sample(
-        partial(rejection_sampling.have_sampled_enough, 20),
+    samples, _ = general_rejection_sample(
+        partial(have_sampled_enough, 20),
         proposal,
         accept_function,
         distr_no_copy,
@@ -255,8 +251,8 @@ def test_general_rejection_sample():
     def accept_all_function(_, __, ___):
         return True
 
-    samples, info = rejection_sampling.general_rejection_sample(
-        partial(rejection_sampling.have_sampled_enough, 20),
+    samples, info = general_rejection_sample(
+        partial(have_sampled_enough, 20),
         proposal,
         accept_all_function,
         distr_no_copy,
@@ -272,33 +268,33 @@ def test_general_rejection_sample():
 @pytest.mark.parametrize(
     "particles,equality,particle,prob",
     [
-        ([particle_filter.Particle(10, 1.0)], eq, 10, 1.0),
+        ([Particle(10, 1.0)], eq, 10, 1.0),
         (
-            [particle_filter.Particle(10, 1.0), particle_filter.Particle(10, 1.0)],
+            [Particle(10, 1.0), Particle(10, 1.0)],
             eq,
             10,
             1.0,
         ),
         (
-            [particle_filter.Particle(10, 1.0), particle_filter.Particle(10, 1.0)],
+            [Particle(10, 1.0), Particle(10, 1.0)],
             eq,
             5,
             0.0,
         ),
         (
-            [particle_filter.Particle(10, 1.0), particle_filter.Particle(5, 1.0)],
+            [Particle(10, 1.0), Particle(5, 1.0)],
             eq,
             10,
             0.5,
         ),
         (
-            [particle_filter.Particle(10, 1.0), particle_filter.Particle(5, 1.0)],
+            [Particle(10, 1.0), Particle(5, 1.0)],
             lambda o1, o2: True,
             5,
             1.0,
         ),
         (
-            [particle_filter.Particle(10, 1.0), particle_filter.Particle(5, 1.0)],
+            [Particle(10, 1.0), Particle(5, 1.0)],
             lambda o1, o2: False,
             5,
             0.0,
@@ -308,8 +304,24 @@ def test_general_rejection_sample():
 def test_pf_probability_of(particles, equality, particle, prob):
     """Tests :meth:`~pomdp_belief_tracking.pf.ParticleFilter.probability_of`"""
     assert (
-        particle_filter.ParticleFilter.from_particles(particles).probability_of(
-            particle, equality
-        )
+        ParticleFilter.from_particles(particles).probability_of(particle, equality)
         == prob
     )
+
+
+def test_general_importance_sampling():
+    """Tests :func:`~pomdp_belief_tracking.pf.rejection_sampling.general_rejection_sample`"""
+
+    def prop_plus2(s, i):
+        return s + 2, {"weight_should_be": 1 / s}
+
+    def weight_1(p, ctx, i):
+        return ctx["weight_should_be"]
+
+    particles = ParticleFilter([10, 20, 10])
+
+    pf, _ = general_importance_sample(prop_plus2, weight_1, particles)
+    assert len(set([12, 22]) - set(p.state for p in pf)) == 0
+    assert len(pf) == 3
+    assert all(p.weight == pytest.approx(2 / 5) for p in pf if p.state == 12), pf
+    assert all(p.weight == pytest.approx(1 / 5) for p in pf if p.state == 22), pf

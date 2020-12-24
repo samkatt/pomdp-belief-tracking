@@ -105,7 +105,7 @@ class ParticleFilter:
         """Computes the total weight in ``particles``
 
         :param particles: particles to compute the total weight of
-        :type particles: Sequence[Particle]
+        :type particles: Iterable[Particle]
         """
         return sum(p.weight for p in particles)
 
@@ -145,13 +145,13 @@ class ParticleFilter:
         return ParticleFilter([distr() for _ in range(n)])
 
     @staticmethod
-    def _from_normalized_particles(particles: Sequence[Particle]) -> ParticleFilter:
+    def _from_normalized_particles(particles: Iterable[Particle]) -> ParticleFilter:
         """A private function, creates a particle filter from provided particles
 
         Assumes (but checks) whether the total weight of ``particles`` is approximately 1.0
 
         :param particles: the particles to create a filter from
-        :type particles: Sequence[Particle]
+        :type particles: Iterable[Particle]
         :return: a particle filter that contains ``particles``
         :rtype: ParticleFilter
         """
@@ -165,7 +165,7 @@ class ParticleFilter:
         return pf
 
     @staticmethod
-    def from_particles(particles: Sequence[Particle]) -> ParticleFilter:
+    def from_particles(particles: Iterable[Particle]) -> ParticleFilter:
         """Creates a particle filter from ``particles``
 
         Note:
@@ -174,7 +174,7 @@ class ParticleFilter:
 
 
         :param particles: the particles to create the filter from
-        :type particles: Sequence[Particle]
+        :type particles: Iterable[Particle]
         :return: a particle filter from given ``particles``
         :rtype: ParticleFilter
         """

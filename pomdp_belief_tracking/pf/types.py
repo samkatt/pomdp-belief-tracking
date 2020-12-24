@@ -1,13 +1,11 @@
 """Some additional (shared) particle filtering types"""
 from __future__ import annotations
 
-from typing import Any, Tuple, TypeVar
+from typing import Any, Tuple
 
 from typing_extensions import Protocol
 
 from pomdp_belief_tracking.types import Info, State
-
-Sample = TypeVar("Sample")
 
 
 class ProposalDistribution(Protocol):
