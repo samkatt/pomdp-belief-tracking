@@ -7,8 +7,8 @@ from operator import eq
 
 import pytest  # type: ignore
 
-from pomdp_belief_tracking.pf.importance_sampling import general_importance_sample
-from pomdp_belief_tracking.pf.particle_filter import Particle, ParticleFilter
+from pomdp_belief_tracking.pf.importance_sampling import general_importance_sample, resample
+from pomdp_belief_tracking.pf.particle_filter import Particle, ParticleFilter, effective_sample_size
 from pomdp_belief_tracking.pf.rejection_sampling import (
     general_rejection_sample,
     have_sampled_enough,
@@ -137,6 +137,20 @@ def test_pf_call():
     assert 10 in samples
     assert -1 in samples
     assert samples.count(10) > samples.count(-1)
+
+
+@pytest.mark.parametrize(
+    "weights,neff",
+    [
+        ([3.4567], 1.0),
+        ([0.5, 0.5], 2.0),
+        ([10, 10], 2.0),
+        ([3.5, 3.5, 35], 1.411764),
+    ],
+)
+def test_effective_sample_size(weights, neff):
+    """Tests :func:`~pomdp_belief_tracking.pf.importance_sampling.resample`"""
+    assert effective_sample_size(weights) == pytest.approx(neff)
 
 
 @pytest.mark.parametrize(
@@ -307,6 +321,30 @@ def test_pf_probability_of(particles, equality, particle, prob):
         ParticleFilter.from_particles(particles).probability_of(particle, equality)
         == prob
     )
+
+
+def test_resample():
+    """Tests :func:`~pomdp_belief_tracking.pf.importance_sampling.resample`"""
+
+    def sample_zero():
+        return 0
+
+    particles = resample(sample_zero, 5)
+
+    assert len(particles) == 5
+    assert random.choice(particles).state == 0
+
+    def sample_bool():
+        return random.choice([False, True])
+
+    particles = resample(sample_bool, 100)
+
+    assert len(particles) == 100
+
+    pf = ParticleFilter.from_particles(particles)
+    assert len(particles) == 100
+    assert 0.4 < pf.probability_of(False) < 0.6
+    assert 0.4 < pf.probability_of(True) < 0.6
 
 
 def test_general_importance_sampling():

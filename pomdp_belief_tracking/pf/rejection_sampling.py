@@ -30,7 +30,7 @@ from __future__ import annotations
 
 from functools import partial
 from operator import eq
-from typing import Any, Callable, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from tqdm import tqdm  # type: ignore
 from typing_extensions import Protocol
@@ -332,13 +332,15 @@ def rejection_sample(
     """
     assert n > 0
 
-    def transition_func(s: State, info: Info) -> Tuple[State, Observation]:
+    def transition_func(s: State, info: Info) -> Tuple[State, Dict[str, Any]]:
         """``sim`` with given ``a``"""
-        return sim(s, a)
+        ss, o = sim(s, a)
 
-    def accept_func(s: State, ctx: Observation, info: Info) -> bool:
+        return ss, {"state": s, "action": a, "observation": o}
+
+    def accept_func(s: State, ctx: Dict[str, Any], info: Info) -> bool:
         """Accept samples with same observation"""
-        return observation_matches(o, ctx)
+        return observation_matches(o, ctx["observation"])
 
     particles, info = general_rejection_sample(
         partial(have_sampled_enough, n),

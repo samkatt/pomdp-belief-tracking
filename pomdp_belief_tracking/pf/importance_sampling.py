@@ -20,8 +20,10 @@ defaults, otherwise you can also apply partial):
   signal processing magazine, 20(5), 19-38.
 
 """
+from __future__ import annotations
+
 from functools import partial
-from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
+from typing import Any, Callable, Iterable, List, Optional, Tuple
 
 from typing_extensions import Protocol
 
@@ -39,7 +41,7 @@ from pomdp_belief_tracking.types import (
 
 
 class WeightFunction(Protocol):
-    """Signature of a weighting function in importance sampling
+    """Signature of a weighting function in :func:`general_importance_sample`
 
     .. automethod:: __call__
 
@@ -84,9 +86,10 @@ def general_importance_sample(
     :rtype: Tuple[ParticleFilter, Info]
     """
 
-    info: Dict[str, Any] = {}
+    info: Info = {}
 
     new_particles: List[Particle] = []
+
     for state, weight in particles:
         next_state, ctx = proposal_distr(state, info)
         weight = weight * weight_func(next_state, ctx, info)
@@ -94,6 +97,22 @@ def general_importance_sample(
         new_particles.append(Particle(next_state, weight))
 
     return ParticleFilter.from_particles(new_particles), info
+
+
+def resample(distr: StateDistribution, n: int) -> List[Particle]:
+    """Samples ``n`` particles from ``distr``
+
+    :param distr: distribution to resample
+    :type distr: StateDistribution
+    :param n: number of desired samples in returned PF
+    :type n: int
+    :return: particles resulted from resampling from ``distr``
+    :rtype: List[Particle]
+    """
+    assert n > 0
+
+    w = 1.0 / n
+    return list(Particle(distr(), w) for _ in range(n))
 
 
 def importance_sample(
@@ -133,20 +152,21 @@ def importance_sample(
     """
 
     # create particles to give to importance sampling
-    if isinstance(initial_state_distribution, ParticleFilter):
-        particles = iter(initial_state_distribution.particles)
-    else:  # cannot do anything, just sample with equal weight
+    if not isinstance(initial_state_distribution, ParticleFilter):
         assert n and n > 0
-        particles = (Particle(initial_state_distribution(), 1 / n) for _ in range(n))
+        initial_state_distribution = ParticleFilter.from_particles(
+            resample(initial_state_distribution, n)
+        )
+    particles = iter(initial_state_distribution.particles)
 
     def prop(s: State, info: Info) -> Tuple[State, Any]:
         """turns the transition function into a proposal function"""
         ss = transition_func(s, a)
-        return ss, {"action": a, "state": s}
+        return ss, {"action": a, "state": s, "observation": o}
 
     def weighting(proposal: State, sample_ctx: Any, info: Info) -> float:
         """weights the proposal according to the transition predicting observation"""
-        s, a = sample_ctx["state"], sample_ctx["action"]
+        s, a, o = sample_ctx["state"], sample_ctx["action"], sample_ctx["observation"]
         return observation_model(s, a, proposal, o)
 
     return general_importance_sample(prop, weighting, particles)

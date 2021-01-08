@@ -24,12 +24,21 @@ from __future__ import annotations
 from math import isclose
 from operator import eq
 from random import uniform
-from typing import Callable, Iterable, NamedTuple, Sequence
+from typing import Callable, Iterable, NamedTuple, Optional, Sequence
 
 from pomdp_belief_tracking.types import State, StateDistribution
 
 
-class ParticleFilter:
+class Particle(NamedTuple):  # pylint: disable=inherit-non-class
+    """A (weighted) particle contains a state and weight"""
+
+    state: State
+    """The 'particle' or value"""
+    weight: float
+    """The (relative) probability of the particle"""
+
+
+class ParticleFilter(StateDistribution):
     """A distribution from weighted particles"""
 
     def __init__(self, states: Sequence[State]):
@@ -40,6 +49,7 @@ class ParticleFilter:
         :param states: the particles
         :type states: Sequence[State]
         """
+        super().__init__()
 
         if len(states) > 0:
             weight = 1 / len(states)
@@ -125,6 +135,17 @@ class ParticleFilter:
             p for p in self if equality_function(p.state, s)
         )
 
+    def effective_sample_size(self) -> float:
+        """Returns the "effective sample size" of the particle filter
+
+        Calls :func:`effective_sample_size`
+
+        :return: effective sample size of ``self``
+        :rtype: float
+        """
+        # we _know_ (ensure) that the total weight is always 1.
+        return effective_sample_size((p.weight for p in self.particles), 1.0)
+
     @staticmethod
     def from_distribution(distr: StateDistribution, n: int) -> ParticleFilter:
         """Constructs a particle filter of ``n`` particles from ``distr``
@@ -186,10 +207,28 @@ class ParticleFilter:
         )
 
 
-class Particle(NamedTuple):  # pylint: disable=inherit-non-class
-    """A (weighted) particle contains a state and weight"""
+def effective_sample_size(
+    weights: Iterable[float],
+    total_weight: Optional[float] = None,  # pylint: disable=unsubscriptable-object
+) -> float:
+    """Computes the "effective sample size" of the given weights
 
-    state: State
-    """The 'particle' or value"""
-    weight: float
-    """The (relative) probability of the particle"""
+    This value represents how "healthy" the underlying samples are. The lower
+    this value, the fewer "real samples" are represented. As in, the closer
+    this comes to zero, the more degenerated the samples are.
+
+    See link (`https://en.wikipedia.org/wiki/Effective_sample_size`)
+
+    :param weights: the weights of the samples
+    :type weights: Iterable[float]
+    :param total_weight: total weight of all samples, requires extra computation if not given
+    :type total_weight: Optional[float], optional
+    :return: the effective sample size of ``weights``
+    :rtype: float
+    """
+    if total_weight is None:
+        total_weight = sum(weights)
+
+    assert total_weight and total_weight > 0  # for mypy
+
+    return pow(total_weight, 2) / sum(pow(w, 2) for w in weights)

@@ -63,7 +63,7 @@ class Tiger:
         if next_s == Tiger.L:
             return [0.85, 0.15]
 
-        assert next_s == Tiger.R
+        assert next_s == Tiger.R, f"How did {next_s} become a state?"
 
         return [0.15, 0.85]
 
