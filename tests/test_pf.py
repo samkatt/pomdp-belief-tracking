@@ -8,11 +8,19 @@ from operator import eq
 import pytest  # type: ignore
 
 from pomdp_belief_tracking.pf.importance_sampling import (
-    general_importance_sample, resample)
-from pomdp_belief_tracking.pf.particle_filter import (Particle, ParticleFilter,
-                                                      effective_sample_size)
+    general_importance_sample,
+    resample,
+)
+from pomdp_belief_tracking.pf.particle_filter import (
+    Particle,
+    ParticleFilter,
+    apply,
+    effective_sample_size,
+)
 from pomdp_belief_tracking.pf.rejection_sampling import (
-    general_rejection_sample, have_sampled_enough)
+    general_rejection_sample,
+    have_sampled_enough,
+)
 
 
 def test_pf_data_model():
@@ -363,3 +371,18 @@ def test_general_importance_sampling():
     assert len(pf) == 3
     assert all(p.weight == pytest.approx(2 / 5) for p in pf if p.state == 12), pf
     assert all(p.weight == pytest.approx(1 / 5) for p in pf if p.state == 22), pf
+
+
+@pytest.mark.parametrize(
+    "particles,f,expected_new_particles",
+    [
+        ([0], lambda _: 1, [1]),
+        ([0, 1, 2, 3], lambda _: 1, [1, 1, 1, 1]),
+        ([0, 1, 2, 3], lambda x: -x, [0, -1, -2, -3]),
+    ],
+)
+def test_pf_apply(particles, f, expected_new_particles):
+    pf = ParticleFilter(particles)
+    new_pf = apply(f, pf)
+    assert [p.state for p in new_pf] == expected_new_particles
+    assert [p.state for p in pf] == particles

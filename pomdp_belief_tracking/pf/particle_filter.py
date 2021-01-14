@@ -199,7 +199,7 @@ class ParticleFilter(StateDistribution):
         :return: a particle filter from given ``particles``
         :rtype: ParticleFilter
         """
-
+        particles = list(particles)
         total_weight = ParticleFilter.total_weight(particles)
 
         return ParticleFilter._from_normalized_particles(
@@ -232,3 +232,19 @@ def effective_sample_size(
     assert total_weight and total_weight > 0  # for mypy
 
     return pow(total_weight, 2) / sum(pow(w, 2) for w in weights)
+
+
+def apply(f: Callable[[State], State], pf: ParticleFilter) -> ParticleFilter:
+    """Returns a new :class:`ParticleFilter` with ``f`` applied on states in ``pf``
+
+    Note: assumes ``f`` does _not_ affect the input :class:`State`, otherwise
+    the input ``pf`` will be affected to
+
+    :param f: the function to apply to particles
+    :type f: Callable[[State], State]
+    :param pf: input starting particle filter / belief
+    :type pf: ParticleFilter
+    :return: the result of applying ``f`` onto ``pf``
+    :rtype: ParticleFilter
+    """
+    return ParticleFilter.from_particles(Particle(f(s), w) for s, w in pf)
