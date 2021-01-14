@@ -282,9 +282,9 @@ def general_rejection_sample(
         proposal, proposal_info = proposal_distr(sample, info)
 
         if accept_function(proposal, proposal_info, info):
-            proposal = process_accepted(proposal, proposal_info, info)
+            accepted_proposal = process_accepted(proposal, proposal_info, info)
 
-            accepted.append(proposal)
+            accepted.append(accepted_proposal)
             info["num_accepted"] += 1
         else:
             process_rejected(proposal, proposal_info, info)

@@ -7,12 +7,12 @@ from operator import eq
 
 import pytest  # type: ignore
 
-from pomdp_belief_tracking.pf.importance_sampling import general_importance_sample, resample
-from pomdp_belief_tracking.pf.particle_filter import Particle, ParticleFilter, effective_sample_size
+from pomdp_belief_tracking.pf.importance_sampling import (
+    general_importance_sample, resample)
+from pomdp_belief_tracking.pf.particle_filter import (Particle, ParticleFilter,
+                                                      effective_sample_size)
 from pomdp_belief_tracking.pf.rejection_sampling import (
-    general_rejection_sample,
-    have_sampled_enough,
-)
+    general_rejection_sample, have_sampled_enough)
 
 
 def test_pf_data_model():
@@ -350,10 +350,10 @@ def test_resample():
 def test_general_importance_sampling():
     """Tests :func:`~pomdp_belief_tracking.pf.rejection_sampling.general_rejection_sample`"""
 
-    def prop_plus2(s, i):
+    def prop_plus2(s, _):
         return s + 2, {"weight_should_be": 1 / s}
 
-    def weight_1(p, ctx, i):
+    def weight_1(_, ctx, __):
         return ctx["weight_should_be"]
 
     particles = ParticleFilter([10, 20, 10])

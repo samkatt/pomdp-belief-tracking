@@ -101,17 +101,18 @@ class Belief:
         self.distribution = initial_distribution
         self.update_function = update_function
 
-    def update(self, a: Action, o: Observation) -> None:
+    def update(self, a: Action, o: Observation) -> Info:
         """Updates (in place) the state distribution given an action and observation
 
         :param a: the executed action
         :type a: Action
         :param o: the perceived observation
         :type o: Observation
-        :return: Side effect: updates in place
-        :rtype: None
+        :return: Side effect: updates in place, returns run-time info
+        :rtype: Info
         """
-        self.distribution = self.update_function(self.distribution, a, o)[0]
+        self.distribution, info = self.update_function(self.distribution, a, o)
+        return info
 
     def sample(self) -> State:
         """Samples from its distribution
