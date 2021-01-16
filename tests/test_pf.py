@@ -342,9 +342,10 @@ def test_resample():
     assert pf() == 0
 
     p = ParticleFilter([True, False, True, False])
-    pf = resample(p, 100)
+    n = 1000
+    pf = resample(p, n)
 
-    assert len(pf) == 100
+    assert len(pf) == n
     assert 0.4 < pf.probability_of(False) < 0.6
     assert 0.4 < pf.probability_of(True) < 0.6
 
