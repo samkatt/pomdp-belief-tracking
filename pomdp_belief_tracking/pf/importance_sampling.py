@@ -34,8 +34,10 @@ resampling
   signal processing magazine, 20(5), 19-38.
 
 """
+
 from __future__ import annotations
 
+from copy import deepcopy
 from functools import partial
 from typing import Any, Callable, Iterable, List, Optional, Tuple
 
@@ -105,17 +107,15 @@ def general_importance_sample(
     return ParticleFilter.from_particles(new_particles), info
 
 
-def resample(distr: StateDistribution, n: int) -> List[Particle]:
+def resample(pf: ParticleFilter, n: int) -> ParticleFilter:
     """Samples ``n`` particles from ``distr``
 
-    :param distr: distribution to resample
+    :param pf: incoming particle filter
     :param n: number of desired samples in returned PF
-    :return: particles resulted from resampling from ``distr``
+    :return: the resulting particle filter of resampling ``pf``
     """
     assert n > 0
-
-    w = 1.0 / n
-    return list(Particle(distr(), w) for _ in range(n))
+    return ParticleFilter(list(deepcopy(pf()) for _ in range(n)))
 
 
 def importance_sample(
@@ -150,9 +150,10 @@ def importance_sample(
     # create particles to give to importance sampling
     if not isinstance(initial_state_distribution, ParticleFilter):
         assert n and n > 0
-        initial_state_distribution = ParticleFilter.from_particles(
-            resample(initial_state_distribution, n)
+        initial_state_distribution = ParticleFilter.from_distribution(
+            initial_state_distribution, n
         )
+
     particles = iter(initial_state_distribution.particles)
 
     def prop(s: State, info: Info) -> Tuple[State, Any]:
@@ -273,7 +274,7 @@ def create_sequential_importance_sampling(
 
         resampled = False
         if isinstance(p, ParticleFilter) and resample_condition(p):
-            p = ParticleFilter.from_particles(resample(p, len(p)))
+            p = resample(p, len(p))
             resampled = True
 
         belief, info = IS(p, a, o)

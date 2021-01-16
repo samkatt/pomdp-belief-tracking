@@ -335,23 +335,16 @@ def test_pf_probability_of(particles, equality, particle, prob):
 def test_resample():
     """Tests :func:`~pomdp_belief_tracking.pf.importance_sampling.resample`"""
 
-    def sample_zero():
-        return 0
+    p = ParticleFilter([0])
+    pf = resample(p, 5)
 
-    particles = resample(sample_zero, 5)
+    assert len(pf) == 5
+    assert pf() == 0
 
-    assert len(particles) == 5
-    assert random.choice(particles).state == 0
+    p = ParticleFilter([True, False, True, False])
+    pf = resample(p, 100)
 
-    def sample_bool():
-        return random.choice([False, True])
-
-    particles = resample(sample_bool, 100)
-
-    assert len(particles) == 100
-
-    pf = ParticleFilter.from_particles(particles)
-    assert len(particles) == 100
+    assert len(pf) == 100
     assert 0.4 < pf.probability_of(False) < 0.6
     assert 0.4 < pf.probability_of(True) < 0.6
 
