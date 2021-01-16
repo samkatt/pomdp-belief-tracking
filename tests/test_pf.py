@@ -9,6 +9,7 @@ import pytest  # type: ignore
 
 from pomdp_belief_tracking.pf.importance_sampling import (
     general_importance_sample,
+    ineffective_sample_size,
     resample,
 )
 from pomdp_belief_tracking.pf.particle_filter import (
@@ -382,7 +383,38 @@ def test_general_importance_sampling():
     ],
 )
 def test_pf_apply(particles, f, expected_new_particles):
+    """tests :func:`~pomdp_belief_tracking.pf.particle_filter.apply`"""
     pf = ParticleFilter(particles)
     new_pf = apply(f, pf)
     assert [p.state for p in new_pf] == expected_new_particles
     assert [p.state for p in pf] == particles
+
+
+@pytest.mark.parametrize(
+    "weights,min_size,result",
+    [
+        ([3.4567], 0.9, False),
+        ([3.4567], 1.1, True),
+        ([0.5, 0.5], 2.0, False),
+        ([0.5, 0.5], 3.0, True),
+        ([0.5, 0.5], 1.9, False),
+        ([10, 10], 2.0, False),
+        ([10, 10], 3.0, True),
+        ([10, 10], 1.9, False),
+        ([3.5, 3.5, 35], 1.411764, False),
+        ([3.5, 3.5, 35], 0.75, False),
+        ([3.5, 3.5, 35], 1.5, True),
+    ],
+)
+def test_is_ineffective_sample_size(weights, min_size, result):
+    """basic tests :func:`~pomdp_belief_tracking.pf.importance_sampling.ineffective_sample_size`"""
+    pf = ParticleFilter.from_particles(Particle("some state", w) for w in weights)
+    assert ineffective_sample_size(min_size, pf) == result
+
+
+def test_is_ineffective_sample_size_raises():
+    """tests :func:`~pomdp_belief_tracking.pf.importance_sampling.ineffective_sample_size` raises"""
+    with pytest.raises(AssertionError):
+        ineffective_sample_size(-1234, "some bullshit")  # type: ignore
+    with pytest.raises(AssertionError):
+        ineffective_sample_size(0, "some bullshit")  # type: ignore

@@ -60,9 +60,7 @@ class StopCondition(Protocol):
         sampling
 
         :param info: run time information
-        :type info: Info
         :return: true if the condition for stopping is met
-        :rtype: bool
         """
 
 
@@ -72,11 +70,8 @@ def have_sampled_enough(desired_num: int, info: Info) -> bool:
     Given ``desired_num``, this implements :class`StopCondition`
 
     :param desired_num: number of desired samples
-    :type desired_num: int
     :param info: run time info (should have an entry "num_accepted" -> int)
-    :type info: Info
     :return: true if number of accepted samples is greater or equal to ``desired_num``
-    :rtype: bool
     """
     assert desired_num > 0 and info["num_accepted"] >= 0
 
@@ -90,13 +85,9 @@ class AcceptFunction(Protocol):
         """Returns whether the sample ``s`` is accepted given some context ``ctx``
 
         :param s: the updated sample to be tested
-        :type s: State
         :param ctx: output of :func:`AcceptFunction`
-        :type ctx: Any
         :param info: run time information
-        :type info: Info
         :return: whether the sample is accepted
-        :rtype: bool
         """
 
 
@@ -111,13 +102,9 @@ class ProcessRejected(Protocol):
         reset
 
         :param s: the rejected sample
-        :type s: State
         :param ctx: output of :func:`AcceptFunction`
-        :type ctx: Any
         :param info: run time information
-        :type info: Info
         :return: Nothing, only side effects
-        :rtype: None
         """
 
 
@@ -125,13 +112,9 @@ def reject_noop(s: State, ctx: Any, info: Info) -> None:
     """A placeholder for :class:`ProcessRejected`: does nothing
 
     :param s: the accepted sample
-    :type s: State
     :param ctx: the output of :func:`AcceptFunction`
-    :type ctx: Any
     :param info: run time information (ignored)
-    :type info: Info
     :return: Only side effects
-    :rtype: None
     """
 
 
@@ -146,13 +129,9 @@ class ProcessAccepted(Protocol):
         reset it and return a copy
 
         :param s: accepted sample
-        :type s: State
         :param ctx: output of :func:`AcceptFunction`
-        :type ctx: Any
         :param info: run time information
-        :type info: Info
         :return: processed sample
-        :rtype: State
         """
 
 
@@ -160,13 +139,9 @@ def accept_noop(s: State, ctx: Any, info: Info) -> State:
     """A placeholder for :class:`ProcessAccepted`: does nothing
 
     :param s: the accepted sample (ignored)
-    :type s: State
     :param ctx: the output of :func:`AcceptFunction` (ignored)
-    :type ctx: Any
     :param info: run time information (ignored)
-    :type info: Info
     :return: ``s``
-    :rtype: State
     """
     return s
 
@@ -188,7 +163,6 @@ class AcceptionProgressBar(ProcessAccepted):
         not close the progress bar, any more and the progress bar will reset.
 
         :param total_expected_samples: 'length' of progress bar
-        :type total_expected_samples: int
         """
         super().__init__()
         self._total_expected_calls = total_expected_samples
@@ -203,13 +177,9 @@ class AcceptionProgressBar(ProcessAccepted):
         Closes bar upon reaching ``total_expected_samples``
 
         :param s: accepted state (returned without modification)
-        :type s: State
         :param ctx: context of acception (ignored)
-        :type ctx: Any
         :param info: run time information (# accepted samples)
-        :type info: Info
         :return: ``s`` as input
-        :rtype: State
         """
 
         if info["num_accepted"] == 0:
@@ -257,19 +227,12 @@ def general_rejection_sample(
     returned to the caller, allowing for reporting and such.
 
     :param stop_condition: the function controlling whether to stop sampling
-    :type stop_condition: StopCondition
     :param proposal_distr: the proposal update function of samples
-    :type proposal_distr: ProposalDistribution
     :param accept_function: decides whether samples are accepted
-    :type accept_function: AcceptFunction
     :param distr: the initial distribution to sample from
-    :type distr: StateDistribution
     :param process_accepted: how to process a sample once accepted, default :func:`accept_noop`
-    :type process_accepted: ProcessAccepted
     :param process_rejected: how to process a sample once rejected, default :func:`reject_noop`
-    :type process_rejected: ProcessRejected
     :return: a list of samples and run time info
-    :rtype: Tuple[List[State], Info]
     """
 
     info: Info = {"num_accepted": 0, "iteration": 0}
@@ -312,23 +275,14 @@ def rejection_sample(
     Finally wraps the returns list of particles in a :class`ParticleFilter`
 
     :param sim: POMDP dynamics simulator
-    :type sim: Simulator
     :param observation_matches: how to check for observation equality
-    :type observation_matches: Callable[[Observation, Observation], bool]
     :param n: size of particle filter to return
-    :type n: int
     :param process_acpt: function to call when accepting a sample
-    :type process_acpt: ProcessAccepted
     :param process_rej: function to call when rejecting a sample
-    :type process_rej: ProcessRejected
     :param initial_state_distribution: current / previous belief
-    :type initial_state_distribution: StateDistribution
     :param a: taken action
-    :type a: Action
     :param o: perceived observation
-    :type o: Observation
     :return: next belief and run time information
-    :rtype: Tuple[ParticleFilter, Info]
     """
     assert n > 0
 
@@ -366,17 +320,11 @@ def create_rejection_sampling(
     A simple wrapper around :func:`rejection_sample`
 
     :param sim: generative POMDP
-    :type sim: Simulator
     :param n: number of samples to accept
-    :type n: int
     :param observation_matches: method to test equality between observations, defaults to eq
-    :type observation_matches: Optional[Callable[[Observation, Observation], bool]]
     :param process_acpt: method to call upon accepting a sample, defaults to :func:`accept_noop`
-    :type process_acpt: Optional[ProcessAccepted]
     :param process_rej: method to call upon rejecting a sample, defaults to :func:`reject_noop`
-    :type process_rej: Optional[ProcessRejected]
     :return: rejection sampling for POMDPs
-    :rtype: BeliefUpdate
     """
 
     def rs(

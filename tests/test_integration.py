@@ -1,9 +1,14 @@
 #!/usr/bin/env python
 """Tests full belief updates or other larger components"""
 import random
+from functools import partial
 from typing import List, Tuple
 
-from pomdp_belief_tracking.pf.importance_sampling import create_importance_sampling
+from pomdp_belief_tracking.pf.importance_sampling import (
+    create_importance_sampling,
+    create_sequential_importance_sampling,
+    ineffective_sample_size,
+)
 from pomdp_belief_tracking.pf.rejection_sampling import (
     ParticleFilter,
     accept_noop,
@@ -51,11 +56,8 @@ class Tiger:
         """Returns the observation probabilities a, next_s' pair
 
         :param next_s: next state
-        :type next_s: State
         :param a: taken action
-        :type a: Action
         :return: [prob hearing left, prob hearing right]
-        :rtype: List[float]
         """
         if a != Tiger.H:
             return [0.5, 0.5]
@@ -149,13 +151,19 @@ def test_importance_sampling():
     assert Tiger.L not in b and Tiger.R in b
     assert len(b) == n
 
-    b, _ = belief_update(tiger_right_belief, Tiger.L, Tiger.L)
+    belief_update = create_sequential_importance_sampling(
+        partial(ineffective_sample_size, 1000000), trans_func, obs_func, n
+    )
+
+    b, info = belief_update(tiger_right_belief, Tiger.L, Tiger.L)
     assert Tiger.L in b and Tiger.R in b
     assert len(b) == n
+    assert not info["resampled"]
 
     b, _ = belief_update(b, Tiger.H, Tiger.L)
-    next_b, _ = belief_update(b, Tiger.H, Tiger.L)
+    next_b, info = belief_update(b, Tiger.H, Tiger.L)
 
     assert 0.5 < b.probability_of(Tiger.L) < next_b.probability_of(Tiger.L)
     assert 0.5 > b.probability_of(Tiger.R) > next_b.probability_of(Tiger.R)
     assert len(next_b) == n
+    assert info["resampled"]

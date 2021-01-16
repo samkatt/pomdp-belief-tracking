@@ -1,4 +1,4 @@
-"""
+"""Provides a general implementation of importance sampling:
 
 .. autofunction:: general_importance_sample
    :noindex:
@@ -13,6 +13,20 @@ Which can best be created through our construction function (with sane
 defaults, otherwise you can also apply partial):
 
 .. autofunction:: create_importance_sampling
+   :noindex:
+
+Sequential importance sampling, the application of the belief update over
+multiple time steps, often involes :func:`resample` to avoid particle
+degeneration. When to resample is not straightforward; we provide a general
+condition protocol
+
+.. autoclass:: ResampleCondition
+   :noindex:
+
+Lastly, we provide a factory function that combines importance sampling with
+resampling
+
+.. autofunction:: create_sequential_importance_sampling
    :noindex:
 
 .. [particle-filtering] Djuric, P. M., Kotecha, J. H., Zhang, J., Huang, Y.,
@@ -51,13 +65,9 @@ class WeightFunction(Protocol):
         """Weights a ``state`` -> ``proposal`` transition under ``sample_ctx``
 
         :param proposal: proposed (updated) sample
-        :type proposal: State
         :param sample_ctx: context around proposal
-        :type sample_ctx: Any
         :param info: global information stored during importance sampling
-        :type info: Info
         :return: a 0 <= weight <= 1
-        :rtype: float
         """
 
 
@@ -77,13 +87,9 @@ def general_importance_sample(
             weight <- weight * weight_func(sample)
 
     :param proposal_distr: function to propose sample updates
-    :type proposal_distr: ProposalDistribution
     :param weight_func: function that weights propsals
-    :type weight_func: WeightFunction
     :param particles: the starting set of particles
-    :type particles: Iterable[Particle]
     :return: a new particle set
-    :rtype: Tuple[ParticleFilter, Info]
     """
 
     info: Info = {}
@@ -103,11 +109,8 @@ def resample(distr: StateDistribution, n: int) -> List[Particle]:
     """Samples ``n`` particles from ``distr``
 
     :param distr: distribution to resample
-    :type distr: StateDistribution
     :param n: number of desired samples in returned PF
-    :type n: int
     :return: particles resulted from resampling from ``distr``
-    :rtype: List[Particle]
     """
     assert n > 0
 
@@ -136,19 +139,12 @@ def importance_sample(
     Otherwise ignored.
 
     :param transition_func: the proposal function
-    :type transition_func: TransitionFunction
     :param observation_model: the model to weight the probability of generating observation ``o``
-    :type observation_model: Callable[[State, Action, State, Observation], float]
     :param n: num samples, optional
-    :type n: Optional[int]
     :param initial_state_distribution: the starting distribution
-    :type initial_state_distribution: StateDistribution
     :param a: taken action
-    :type a: Action
     :param o: taken observation
-    :type o: Observation
     :return: updated belief
-    :rtype: Tuple[ParticleFilter, Info]
     """
 
     # create particles to give to importance sampling
@@ -192,13 +188,97 @@ def create_importance_sampling(
     Otherwise ignored.
 
     :param transition_func: how to update states
-    :type transition_func: TransitionFunction
     :param observation_model: how to weight transitions
-    :type observation_model: Callable[[State, Action, State, Observation], float]
     :param n: num samples, optional
-    :type n: Optional[int]
     :return: func:`importance_sample` as :class:`pomdp_belief_tracking.types.BeliefUpdate`
-    :rtype: BeliefUpdate
     """
 
     return partial(importance_sample, transition_func, observation_model, n)
+
+
+class ResampleCondition(Protocol):
+    """The signature of a resample condition
+
+    .. automethod:: __call__
+
+    Provided implementations:
+
+    .. autosummary::
+       :nosignatures:
+
+       ineffective_sample_size
+    """
+
+    def __call__(self, pf: ParticleFilter) -> bool:
+        """Inspects ``pf`` and decides whether it is time to re-sample
+
+
+        :param pf: the particle filter to potentially resample
+        :return: ``True`` if ``pf`` should be resampled
+        """
+
+
+def ineffective_sample_size(minimal_size: float, pf: ParticleFilter):
+    """Returns whether the sample size of ``pf`` is lower than ``minimal_size``
+
+    When given ``minimal_size`` this implements :class:`ResampleCondition`
+    protocol. Asserts that ``minimal_size`` > 0
+
+    Calls
+    :func:`~pomdp_belief_tracking.pf.particle_filter.effective_sample_size`
+    under the hood
+
+    :param minimal_size: the required sample size for this to return False (> 0)
+    :param pf: the particle filter to test the sample size of
+    :returns: True if ``minimal_size`` > sample size of ``pf``
+
+    """
+    assert minimal_size > 0, f"effective sample size ({minimal_size}) must be positive"
+    return minimal_size > pf.effective_sample_size()
+
+
+def create_sequential_importance_sampling(
+    resample_condition: ResampleCondition,
+    transition_func: TransitionFunction,
+    observation_model: Callable[[State, Action, State, Observation], float],
+    n: Optional[int] = None,  # pylint: disable=unsubscriptable-object
+) -> BeliefUpdate:
+    """Main entry point of this module to create importance sampling update
+
+    A simple wrapper combining :func:`resample` (if ``resample_condition`` is
+    met) with :func:`importance_sample` (created by calling
+    :func:`create_importance_sampling`
+
+    ``n`` is necessary when ``initial_state_distribution`` is not a
+    :class:`~pomdp_belief_tracking.pf.particle_filter.ParticleFilter`.
+    Otherwise ignored.
+
+    :param resample_condition: when to resample (called before IS)
+    :param transition_func: the transition function to propose particles
+    :param observation_model: the function to weight the new particles
+    :param n: number of desired particles
+    """
+
+    IS = create_importance_sampling(transition_func, observation_model, n)
+
+    def belief_update(
+        p: StateDistribution, a: Action, o: Observation
+    ) -> Tuple[StateDistribution, Info]:
+        """belief_update.
+
+        :param p:
+        :param a:
+        :param o:
+        """
+
+        resampled = False
+        if isinstance(p, ParticleFilter) and resample_condition(p):
+            p = ParticleFilter.from_particles(resample(p, len(p)))
+            resampled = True
+
+        belief, info = IS(p, a, o)
+        info["resampled"] = resampled
+
+        return belief, info
+
+    return belief_update

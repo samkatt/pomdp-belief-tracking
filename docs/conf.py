@@ -176,6 +176,8 @@ texinfo_documents = [
     ),
 ]
 
+autoclass_content = 'both'
+
 # dev options
 todo_emit_warnings = True
 todo_include_todos = True

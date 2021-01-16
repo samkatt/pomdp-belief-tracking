@@ -24,11 +24,8 @@ class TransitionFunction(Protocol):
         """A transition function is a (stochastic) mapping from s x a -> s
 
         :param s: state at time step t
-        :type s: State
         :param a: action at time step t
-        :type a: Action
         :return: state at time step t + 1
-        :rtype: State
         """
 
 
@@ -45,11 +42,8 @@ class Simulator(Protocol):
         """Simulate a transition
 
         :param s: the current state
-        :type s: State
         :param a: the executed action
-        :type a: Action
         :return: next state and observation
-        :rtype: Tuple[State, Observation]
         """
 
 
@@ -65,7 +59,6 @@ class StateDistribution(Protocol):
         """Required implementation of distribution: the ability to sample states
 
         :return: state sampled according to distribution
-        :rtype: State
         """
 
 
@@ -82,13 +75,9 @@ class BeliefUpdate(Protocol):
         """Updates the distribution `p` given an action and observation
 
         :param p: current distribution
-        :type p: StateDistribution
         :param a: taken action
-        :type a: Action
         :param o: perceived observation
-        :type o: Observation
         :return: next distribution
-        :rtype: Tuple[StateDistribution, Info]
         """
 
 
@@ -105,11 +94,8 @@ class Belief:
         """Updates (in place) the state distribution given an action and observation
 
         :param a: the executed action
-        :type a: Action
         :param o: the perceived observation
-        :type o: Observation
         :return: Side effect: updates in place, returns run-time info
-        :rtype: Info
         """
         self.distribution, info = self.update_function(self.distribution, a, o)
         return info
@@ -118,6 +104,5 @@ class Belief:
         """Samples from its distribution
 
         :return: state sampled according to distribution
-        :rtype: State
         """
         return self.distribution()

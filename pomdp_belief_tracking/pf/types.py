@@ -15,9 +15,6 @@ class ProposalDistribution(Protocol):
         """Proposes an 'updated' sample from some initial ``s``
 
         :param s: a sample at t
-        :type s: State
         :param info: run time information
-        :type info: Info
         :return: an updated sample at t+1 and any additional context
-        :rtype: Tuple[State, Any]
         """
