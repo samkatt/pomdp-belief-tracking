@@ -73,9 +73,9 @@ def have_sampled_enough(desired_num: int, info: Info) -> bool:
     :param info: run time info (should have an entry "num_accepted" -> int)
     :return: true if number of accepted samples is greater or equal to ``desired_num``
     """
-    assert desired_num > 0 and info["num_accepted"] >= 0
+    assert desired_num > 0 and info["rejection_sampling_num_accepted"] >= 0
 
-    return desired_num <= info["num_accepted"]
+    return desired_num <= info["rejection_sampling_num_accepted"]
 
 
 class AcceptFunction(Protocol):
@@ -182,14 +182,14 @@ class AcceptionProgressBar(ProcessAccepted):
         :return: ``s`` as input
         """
 
-        if info["num_accepted"] == 0:
+        if info["rejection_sampling_num_accepted"] == 0:
             # the first sample is accepted, LGTM
             self.pbar = tqdm(total=self._total_expected_calls)
 
         assert self.pbar
         self.pbar.update()
 
-        if info["num_accepted"] == self._total_expected_calls - 1:
+        if info["rejection_sampling_num_accepted"] == self._total_expected_calls - 1:
             # last sample accepted!
             self.pbar.close()
 
@@ -235,7 +235,10 @@ def general_rejection_sample(
     :return: a list of samples and run time info
     """
 
-    info: Info = {"num_accepted": 0, "iteration": 0}
+    info: Info = {
+        "rejection_sampling_num_accepted": 0,
+        "rejection_sampling_iteration": 0,
+    }
     accepted: List[State] = []
 
     while not stop_condition(info):
@@ -248,11 +251,11 @@ def general_rejection_sample(
             accepted_proposal = process_accepted(proposal, proposal_info, info)
 
             accepted.append(accepted_proposal)
-            info["num_accepted"] += 1
+            info["rejection_sampling_num_accepted"] += 1
         else:
             process_rejected(proposal, proposal_info, info)
 
-        info["iteration"] += 1
+        info["rejection_sampling_iteration"] += 1
 
     return accepted, info
 

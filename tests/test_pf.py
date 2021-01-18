@@ -168,20 +168,25 @@ def test_effective_sample_size(weights, neff):
 )
 def test_have_sampled_enough(num_desired, num_accepted, expected):
     """Tests :func:`~pomdp_belief_tracking.pf.have_sampled_enough`"""
-    assert have_sampled_enough(num_desired, {"num_accepted": num_accepted}) == expected
+    assert (
+        have_sampled_enough(
+            num_desired, {"rejection_sampling_num_accepted": num_accepted}
+        )
+        == expected
+    )
 
 
 def test_have_sampled_edge_cases():
     """Tests :func:`~pomdp_belief_tracking.pf.have_sampled_enough` edge cases"""
 
     with pytest.raises(AssertionError):
-        have_sampled_enough(-1, {"num_accepted": 10})
+        have_sampled_enough(-1, {"rejection_sampling_num_accepted": 10})
 
     with pytest.raises(AssertionError):
-        have_sampled_enough(0, {"num_accepted": 10})
+        have_sampled_enough(0, {"rejection_sampling_num_accepted": 10})
 
     with pytest.raises(AssertionError):
-        have_sampled_enough(10, {"num_accepted": -1})
+        have_sampled_enough(10, {"rejection_sampling_num_accepted": -1})
 
 
 def test_general_rejection_sample():
@@ -219,16 +224,10 @@ def test_general_rejection_sample():
         process_accepted,
     )
 
-    assert (
-        len(samples) == desired_samples
-    ), f"Expecting requested samples, not {len(samples)}"
+    assert len(samples) == desired_samples
     assert all(list(x[0] in [11, 4] for x in samples)), "samples should be incremented"
-    assert (
-        info["num_accepted"] == desired_samples
-    ), f"Expecting to accurately report number of accepts, not {info['num_accepted']}"
-    assert (
-        info["iteration"] > desired_samples
-    ), f"Expecting some particles to be rejected, not {info['iteration']}"
+    assert info["rejection_sampling_num_accepted"] == desired_samples
+    assert info["rejection_sampling_iteration"] > desired_samples
 
     start_samples = [[10], [3]]
 
@@ -248,7 +247,7 @@ def test_general_rejection_sample():
         process_rejected_reset,
     )
 
-    assert len(samples) == 20, f"Expecting requested samples, not {len(samples)}"
+    assert len(samples) == 20
     assert not all(list(x[0] in [11, 4] for x in samples)), "samples are modified"
 
     def process_accepted_copy(x, _, __):
@@ -284,8 +283,8 @@ def test_general_rejection_sample():
     )
 
     assert len(samples) == 20
-    assert info["num_accepted"] == 20
-    assert info["iteration"] == 20
+    assert info["rejection_sampling_num_accepted"] == 20
+    assert info["rejection_sampling_iteration"] == 20
 
 
 @pytest.mark.parametrize(

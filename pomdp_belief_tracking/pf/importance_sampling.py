@@ -278,7 +278,7 @@ def create_sequential_importance_sampling(
             resampled = True
 
         belief, info = IS(p, a, o)
-        info["resampled"] = resampled
+        info["importance_sampling_resampled"] = resampled
 
         return belief, info
 

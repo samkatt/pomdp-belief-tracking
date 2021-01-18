@@ -100,24 +100,32 @@ def test_rejection_sampling():
     assert isinstance(b, ParticleFilter)
     assert Tiger.L in b and Tiger.R in b
     assert b.probability_of(Tiger.L) > b.probability_of(Tiger.R)
-    assert info["num_accepted"] == 100
-    assert 50 < info["iteration"] - info["num_accepted"] < 150
+    assert info["rejection_sampling_num_accepted"] == 100
+    assert (
+        50
+        < info["rejection_sampling_iteration"] - info["rejection_sampling_num_accepted"]
+        < 150
+    )
 
     b, info = belief_update(uniform_tiger_belief, Tiger.H, Tiger.R)
 
     assert isinstance(b, ParticleFilter)
     assert Tiger.L in b and Tiger.R in b
     assert b.probability_of(Tiger.L) < b.probability_of(Tiger.R)
-    assert info["num_accepted"] == 100
-    assert 50 < info["iteration"] - info["num_accepted"] < 150
+    assert info["rejection_sampling_num_accepted"] == 100
+    assert (
+        50
+        < info["rejection_sampling_iteration"] - info["rejection_sampling_num_accepted"]
+        < 150
+    )
 
     b, info = belief_update(tiger_right_belief, Tiger.H, Tiger.L)
     assert Tiger.L not in b and Tiger.R in b
-    assert info["num_accepted"] == 100
+    assert info["rejection_sampling_num_accepted"] == 100
 
     b, info = belief_update(tiger_right_belief, Tiger.L, Tiger.L)
     assert Tiger.L in b and Tiger.R in b
-    assert info["num_accepted"] == 100
+    assert info["rejection_sampling_num_accepted"] == 100
 
 
 def test_importance_sampling():
@@ -148,6 +156,7 @@ def test_importance_sampling():
     assert len(b) == n
 
     b, _ = belief_update(tiger_right_belief, Tiger.H, Tiger.L)
+    assert isinstance(b, ParticleFilter)
     assert Tiger.L not in b and Tiger.R in b
     assert len(b) == n
 
@@ -157,13 +166,16 @@ def test_importance_sampling():
 
     b, info = belief_update(tiger_right_belief, Tiger.L, Tiger.L)
     assert Tiger.L in b and Tiger.R in b
+    assert isinstance(b, ParticleFilter)
     assert len(b) == n
-    assert not info["resampled"]
+    assert not info["importance_sampling_resampled"]
 
     b, _ = belief_update(b, Tiger.H, Tiger.L)
     next_b, info = belief_update(b, Tiger.H, Tiger.L)
 
+    assert isinstance(b, ParticleFilter)
+    assert isinstance(next_b, ParticleFilter)
     assert 0.5 < b.probability_of(Tiger.L) < next_b.probability_of(Tiger.L)
     assert 0.5 > b.probability_of(Tiger.R) > next_b.probability_of(Tiger.R)
     assert len(next_b) == n
-    assert info["resampled"]
+    assert info["importance_sampling_resampled"]
