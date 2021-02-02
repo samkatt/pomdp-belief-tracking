@@ -39,6 +39,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from functools import partial
+from timeit import default_timer as timer
 from typing import Any, Callable, Iterable, List, Optional, Tuple
 
 from typing_extensions import Protocol
@@ -88,6 +89,9 @@ def general_importance_sample(
             sample ~ proposal_distr(sample)
             weight <- weight * weight_func(sample)
 
+    Returns how long the update took in ``info`` with key
+    "belief_update_runtime"
+
     :param proposal_distr: function to propose sample updates
     :param weight_func: function that weights propsals
     :param particles: the starting set of particles
@@ -98,11 +102,15 @@ def general_importance_sample(
 
     new_particles: List[Particle] = []
 
+    t = timer()
+
     for state, weight in particles:
         next_state, ctx = proposal_distr(state, info)
         weight = weight * weight_func(next_state, ctx, info)
 
         new_particles.append(Particle(next_state, weight))
+
+    info["belief_update_runtime"] = timer() - t
 
     return ParticleFilter.from_particles(new_particles), info
 

@@ -228,6 +228,7 @@ def test_general_rejection_sample():
     assert all(list(x[0] in [11, 4] for x in samples)), "samples should be incremented"
     assert info["rejection_sampling_num_accepted"] == desired_samples
     assert info["rejection_sampling_iteration"] > desired_samples
+    assert info["belief_update_runtime"] > 0.
 
     start_samples = [[10], [3]]
 
@@ -360,11 +361,12 @@ def test_general_importance_sampling():
 
     particles = ParticleFilter([10, 20, 10])
 
-    pf, _ = general_importance_sample(prop_plus2, weight_1, particles)
+    pf, info = general_importance_sample(prop_plus2, weight_1, particles)
     assert len(set([12, 22]) - set(p.state for p in pf)) == 0
     assert len(pf) == 3
     assert all(p.weight == pytest.approx(2 / 5) for p in pf if p.state == 12), pf
     assert all(p.weight == pytest.approx(1 / 5) for p in pf if p.state == 22), pf
+    assert info["belief_update_runtime"] > 0.
 
 
 @pytest.mark.parametrize(

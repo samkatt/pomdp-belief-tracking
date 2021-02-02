@@ -30,6 +30,7 @@ from __future__ import annotations
 
 from functools import partial
 from operator import eq
+from timeit import default_timer as timer
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from tqdm import tqdm  # type: ignore
@@ -226,6 +227,9 @@ def general_rejection_sample(
     turn can populate or make use of the information. This is ultimately
     returned to the caller, allowing for reporting and such.
 
+    Returns how long the update took in ``info`` with key
+    "belief_update_runtime"
+
     :param stop_condition: the function controlling whether to stop sampling
     :param proposal_distr: the proposal update function of samples
     :param accept_function: decides whether samples are accepted
@@ -240,6 +244,8 @@ def general_rejection_sample(
         "rejection_sampling_iteration": 0,
     }
     accepted: List[State] = []
+
+    t = timer()
 
     while not stop_condition(info):
 
@@ -256,6 +262,8 @@ def general_rejection_sample(
             process_rejected(proposal, proposal_info, info)
 
         info["rejection_sampling_iteration"] += 1
+
+    info["belief_update_runtime"] = timer() - t
 
     return accepted, info
 
