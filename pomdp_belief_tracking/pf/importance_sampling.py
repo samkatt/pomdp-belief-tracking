@@ -118,6 +118,12 @@ def general_importance_sample(
 def resample(pf: ParticleFilter, n: int) -> ParticleFilter:
     """Samples ``n`` particles from ``distr``
 
+    .. todo:
+
+        This implementation is squared in the number of particles - because
+        sampling from particle filter is linear in number of particles -. Good
+        excuse for optimization, maybe allow for sampling multiple at a time)
+
     :param pf: incoming particle filter
     :param n: number of desired samples in returned PF
     :return: the resulting particle filter of resampling ``pf``

@@ -50,6 +50,10 @@ clean-test: ## remove test and coverage artifacts
 lint: ## check style with flake8
 	flake8 pomdp_belief_tracking tests
 
+format: ## format style with black
+	black pomdp_belief_tracking tests
+
+
 test: ## run tests quickly with the default Python
 	pytest
 
