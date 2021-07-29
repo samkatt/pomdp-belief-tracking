@@ -48,11 +48,13 @@ clean-test: ## remove test and coverage artifacts
 	rm -fr .pytest_cache
 
 lint: ## check style with flake8
-	flake8 pomdp_belief_tracking tests
+	flake8 online_pomdp_planning tests
+	mypy online_pomdp_planning tests
+	pylint online_pomdp_planning tests
 
 format: ## format style with black
+	isort pomdp_belief_tracking tests
 	black pomdp_belief_tracking tests
-
 
 test: ## run tests quickly with the default Python
 	pytest
