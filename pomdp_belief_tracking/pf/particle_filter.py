@@ -19,6 +19,10 @@ them as containers.
     :special-members: __call__, __len__, __contains__, __iter__
     :noindex:
 
+.. [particle-filtering] Djuric, P. M., Kotecha, J. H., Zhang, J., Huang, Y.,
+   Ghirmai, T., Bugallo, M. F., & Miguez, J. (2003). Particle filtering. IEEE
+   signal processing magazine, 20(5), 19-38.
+
 """
 from __future__ import annotations
 

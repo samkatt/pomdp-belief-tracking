@@ -179,3 +179,10 @@ todo_emit_warnings = True
 todo_include_todos = True
 
 nitpicky = True
+
+nitpick_ignore = [
+    ("py:data", "typing.Any"),
+    ("py:data", "typing.Tuple"),
+    ("py:data", "typing.Optional"),
+    ("py:data", "typing.Callable"),
+]
