@@ -62,7 +62,7 @@ class StopCondition(Protocol):
 
 
 def have_sampled_enough(desired_num: int, info: Info) -> bool:
-    """Returns ``true`` if "num_accepted" in ``info`` has reached ``desired_num``
+    """Returns ``True`` if "num_accepted" in ``info`` has reached ``desired_num``
 
     Given ``desired_num``, this implements :class`StopCondition`
 
@@ -146,7 +146,7 @@ def accept_noop(s: State, ctx: Any, info: Info) -> State:
 class AcceptionProgressBar(ProcessAccepted):
     """A :class:`ProcessAccepted` call that prints out a progress bar
 
-    The progress bar is printed by ``tqdm``, and will magnificently fail if
+    The progress bar is printed by `tqdm`, and will magnificently fail if
     something else is printed or logged during.
 
     XXX: not tested because UI is hard to test, please modify with care
@@ -164,9 +164,9 @@ class AcceptionProgressBar(ProcessAccepted):
         super().__init__()
         self._total_expected_calls = total_expected_samples
 
-        # ``tqdm`` starts the progress bar upon initiation. At this point the
+        # `tqdm` starts the progress bar upon initiation. At this point the
         # belief update is not happening yet, so we do not want to print it
-        self.pbar: Optional[tqdm] = None  # pylint: disable=unsubscriptable-object
+        self.pbar: Optional[tqdm] = None
 
     def __call__(self, s: State, ctx: Any, info: Info) -> State:
         """Called upon accepting a sample. Updates progress bar

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Tests for :class:`pomdp_belief_tracking.pf` module."""
+"""Tests for :mod:`pomdp_belief_tracking.pf`"""
 
 import random
 from functools import partial
@@ -195,16 +195,16 @@ def test_general_rejection_sample():
     def distr():
         return random.choice([[10], [3]])
 
-    def proposal(x, _):
-        x[0] += 2
-        return (x, random.choice([True, False]))
+    def proposal(s, info):
+        s[0] += 2
+        return (s, random.choice([True, False]))
 
-    def accept_function(_, ctx, __):
+    def accept_function(s, ctx, info):
         return ctx
 
-    def process_accepted(x, _, __):
-        x[0] -= 1
-        return x
+    def process_accepted(s, ctx, info):
+        s[0] -= 1
+        return s
 
     with pytest.raises(AssertionError):
         general_rejection_sample(
@@ -235,9 +235,9 @@ def test_general_rejection_sample():
     def distr_no_copy():
         return random.choice(start_samples)
 
-    def process_rejected_reset(x, _, __):
-        x[0] -= 2
-        return x
+    def process_rejected_reset(s, ctx, info):
+        s[0] -= 2
+        return s
 
     samples, _ = general_rejection_sample(
         partial(have_sampled_enough, 20),
@@ -251,10 +251,10 @@ def test_general_rejection_sample():
     assert len(samples) == 20
     assert not all(list(x[0] in [11, 4] for x in samples)), "samples are modified"
 
-    def process_accepted_copy(x, _, __):
-        copy = [x[0]]
+    def process_accepted_copy(s, ctx, info):
+        copy = [s[0]]
         # reset original
-        x[0] -= 2
+        s[0] -= 2
         return copy
 
     start_samples = [[10], [3]]
@@ -271,7 +271,7 @@ def test_general_rejection_sample():
     assert len(samples) == 20
     assert all(list(x[0] in [12, 5] for x in samples)), ""
 
-    def accept_all_function(_, __, ___):
+    def accept_all_function(s, ctx, info):
         return True
 
     samples, info = general_rejection_sample(
@@ -353,11 +353,11 @@ def test_resample():
 def test_general_importance_sampling():
     """Tests :func:`~pomdp_belief_tracking.pf.rejection_sampling.general_rejection_sample`"""
 
-    def prop_plus2(s, _):
+    def prop_plus2(s, info):
         return s + 2, {"weight_should_be": 1 / s}
 
-    def weight_1(_, ctx, __):
-        return ctx["weight_should_be"]
+    def weight_1(proposal, sample_ctx, info):
+        return sample_ctx["weight_should_be"]
 
     particles = ParticleFilter([10, 20, 10])
 
@@ -413,3 +413,7 @@ def test_is_ineffective_sample_size_raises():
         ineffective_sample_size(-1234, "some bullshit")  # type: ignore
     with pytest.raises(AssertionError):
         ineffective_sample_size(0, "some bullshit")  # type: ignore
+
+
+if __name__ == "__main__":
+    pytest.main([__file__])

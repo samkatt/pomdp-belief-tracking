@@ -12,7 +12,7 @@ class ProposalDistribution(Protocol):
     """The signature for the proposal distribution for sampling"""
 
     def __call__(self, s: State, info: Info) -> Tuple[State, Any]:
-        """Proposes an 'updated' sample from some initial ``s``
+        """Proposes an updated sample from some initial ``s``
 
         :param s: a sample at t
         :param info: run time information

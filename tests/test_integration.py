@@ -4,6 +4,8 @@ import random
 from functools import partial
 from typing import List, Tuple
 
+import pytest
+
 from pomdp_belief_tracking.pf.importance_sampling import (
     create_importance_sampling,
     create_sequential_importance_sampling,
@@ -120,10 +122,12 @@ def test_rejection_sampling():
     )
 
     b, info = belief_update(tiger_right_belief, Tiger.H, Tiger.L)
+    assert isinstance(b, ParticleFilter)
     assert Tiger.L not in b and Tiger.R in b
     assert info["rejection_sampling_num_accepted"] == 100
 
     b, info = belief_update(tiger_right_belief, Tiger.L, Tiger.L)
+    assert isinstance(b, ParticleFilter)
     assert Tiger.L in b and Tiger.R in b
     assert info["rejection_sampling_num_accepted"] == 100
 
@@ -165,6 +169,7 @@ def test_importance_sampling():
     )
 
     b, info = belief_update(tiger_right_belief, Tiger.L, Tiger.L)
+    assert isinstance(b, ParticleFilter)
     assert Tiger.L in b and Tiger.R in b
     assert isinstance(b, ParticleFilter)
     assert len(b) == n
@@ -179,3 +184,7 @@ def test_importance_sampling():
     assert 0.5 > b.probability_of(Tiger.R) > next_b.probability_of(Tiger.R)
     assert len(next_b) == n
     assert info["importance_sampling_resampled"]
+
+
+if __name__ == "__main__":
+    pytest.main([__file__])

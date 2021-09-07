@@ -131,7 +131,7 @@ def resample(pf: ParticleFilter, n: int) -> ParticleFilter:
 def importance_sample(
     transition_func: TransitionFunction,
     observation_model: Callable[[State, Action, State, Observation], float],
-    n: Optional[int],  # pylint: disable=unsubscriptable-object
+    n: Optional[int],
     initial_state_distribution: StateDistribution,
     a: Action,
     o: Observation,
@@ -182,7 +182,7 @@ def importance_sample(
 def create_importance_sampling(
     transition_func: TransitionFunction,
     observation_model: Callable[[State, Action, State, Observation], float],
-    n: Optional[int],  # pylint: disable=unsubscriptable-object
+    n: Optional[int],
 ) -> BeliefUpdate:
     """Partial function that returns a regular IS belief update
 
@@ -252,7 +252,7 @@ def create_sequential_importance_sampling(
     resample_condition: ResampleCondition,
     transition_func: TransitionFunction,
     observation_model: Callable[[State, Action, State, Observation], float],
-    n: Optional[int] = None,  # pylint: disable=unsubscriptable-object
+    n: Optional[int] = None,
 ) -> BeliefUpdate:
     """Main entry point of this module to create importance sampling update
 

@@ -34,7 +34,7 @@ from typing import Callable, Iterable, NamedTuple, Optional, Sequence
 from pomdp_belief_tracking.types import State, StateDistribution
 
 
-class Particle(NamedTuple):  # pylint: disable=inherit-non-class
+class Particle(NamedTuple):
     """A (weighted) particle contains a state and weight"""
 
     state: State
@@ -62,7 +62,7 @@ class ParticleFilter(StateDistribution):
             self.particles = []
 
     def __call__(self) -> State:
-        """Implements `StateDistribution` protocol: sample states
+        """Implements :class:`StateDistribution` protocol: sample states
 
         Simply samples a state according to the distribution specified by the
         particles.
@@ -90,7 +90,7 @@ class ParticleFilter(StateDistribution):
     def __len__(self):
         """Returns the number of particles
 
-        Allows for ``len(particle_filter)`` syntax
+        Allows for `len(particle_filter)` syntax
         """
         return len(self.particles)
 
@@ -100,14 +100,14 @@ class ParticleFilter(StateDistribution):
     def __iter__(self):
         """Returns iterator over the particles
 
-        Allows for ``for state, weight in particle_filter:``
+        Allows for `for state, weight in particle_filter:`
         """
         return iter(self.particles)
 
     def __contains__(self, item):
-        """Checks whether `item` is a state in our particles
+        """Checks whether ``item`` is a state in our particles
 
-        Allows for ``s in particle_filter`` syntax
+        Allows for `s in particle_filter` syntax
 
         :param item: the item to check for
         """
@@ -139,7 +139,7 @@ class ParticleFilter(StateDistribution):
 
         Calls :func:`effective_sample_size`
 
-        :return: effective sample size of ``self``
+        :return: effective sample size of `self`
         """
         # we _know_ (ensure) that the total weight is always 1.
         return effective_sample_size((p.weight for p in self.particles), 1.0)
@@ -150,8 +150,9 @@ class ParticleFilter(StateDistribution):
 
         Basically samples ``n`` particles.
 
-        NOTE:
-            Does not _copy_ samples drawn from ``distr``. Make sure ``distr()``
+        NOTE::
+
+            Does not _copy_ samples drawn from ``distr``. Make sure `distr()`
             copies the particles if necessary
 
         :param distr: the distribution to approximate
@@ -202,7 +203,7 @@ class ParticleFilter(StateDistribution):
 
 def effective_sample_size(
     weights: Iterable[float],
-    total_weight: Optional[float] = None,  # pylint: disable=unsubscriptable-object
+    total_weight: Optional[float] = None,
 ) -> float:
     """Computes the "effective sample size" of the given weights
 
@@ -210,7 +211,7 @@ def effective_sample_size(
     this value, the fewer "real samples" are represented. As in, the closer
     this comes to zero, the more degenerated the samples are.
 
-    See link (`https://en.wikipedia.org/wiki/Effective_sample_size`)
+    See `https://en.wikipedia.org/wiki/Effective_sample_size`
 
     :param weights: the weights of the samples
     :param total_weight: total weight of all samples, requires extra computation if not given

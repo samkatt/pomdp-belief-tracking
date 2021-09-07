@@ -72,7 +72,7 @@ class BeliefUpdate(Protocol):
     def __call__(
         self, p: StateDistribution, a: Action, o: Observation
     ) -> Tuple[StateDistribution, Info]:
-        """Updates the distribution `p` given an action and observation
+        """Updates the distribution ``p`` given an action and observation
 
         :param p: current distribution
         :param a: taken action
