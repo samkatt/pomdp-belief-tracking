@@ -1,5 +1,9 @@
 """ Implementation of particle filters (PF [particle-filtering]_)
 
+.. [particle-filtering] Djuric, P. M., Kotecha, J. H., Zhang, J., Huang, Y.,
+   Ghirmai, T., Bugallo, M. F., & Miguez, J. (2003). Particle filtering. IEEE
+   signal processing magazine, 20(5), 19-38.
+
 PF approximate distributions with **weighted particles**. A
 :class:`~pomdp_belief_tracking.pf.particle_filter.Particle` is a
 :class:`~pomdp_belief_tracking.types.State`, and the weight corresponds to its
@@ -18,10 +22,6 @@ them as containers.
     :members: probability_of, from_distribution, from_particles, effective_sample_size
     :special-members: __call__, __len__, __contains__, __iter__
     :noindex:
-
-.. [particle-filtering] Djuric, P. M., Kotecha, J. H., Zhang, J., Huang, Y.,
-   Ghirmai, T., Bugallo, M. F., & Miguez, J. (2003). Particle filtering. IEEE
-   signal processing magazine, 20(5), 19-38.
 
 """
 from __future__ import annotations
@@ -62,7 +62,7 @@ class ParticleFilter(StateDistribution):
             self.particles = []
 
     def __call__(self) -> State:
-        """Implements :class:`StateDistribution` protocol: sample states
+        """Implements :class:`pomdp_belief_tracking.types.StateDistribution` protocol: sample states
 
         Simply samples a state according to the distribution specified by the
         particles.

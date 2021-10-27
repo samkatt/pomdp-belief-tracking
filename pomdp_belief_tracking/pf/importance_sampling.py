@@ -116,8 +116,8 @@ def resample(pf: ParticleFilter, n: int) -> ParticleFilter:
 
     .. todo:
 
-        This implementation is squared in the number of particles - because
-        sampling from particle filter is linear in number of particles -. Good
+        This implementation is squared in the number of particles because
+        sampling from particle filter is linear in number of particles. Good
         excuse for optimization, maybe allow for sampling multiple at a time)
 
     :param pf: incoming particle filter
