@@ -5,7 +5,7 @@ import random
 from functools import partial
 from operator import eq
 
-import pytest  # type: ignore
+import pytest
 
 from pomdp_belief_tracking.pf.importance_sampling import (
     general_importance_sample,

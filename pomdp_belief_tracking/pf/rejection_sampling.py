@@ -19,7 +19,6 @@ This package provides some useful functions to extend the belief update. Most
 notably:
 
 - :class:`AcceptionProgressBar`
-
 """
 
 from __future__ import annotations
@@ -32,18 +31,14 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 from tqdm import tqdm  # type: ignore
 from typing_extensions import Protocol
 
-import pomdp_belief_tracking.pf.particle_filter
-import pomdp_belief_tracking.pf.types
 from pomdp_belief_tracking.pf.particle_filter import ParticleFilter
-from pomdp_belief_tracking.types import (
-    Action,
+from pomdp_belief_tracking.pf.types import (
     BeliefUpdate,
-    Info,
-    Observation,
+    GenerativeStateDistribution,
+    ProposalDistribution,
     Simulator,
-    State,
-    StateDistribution,
 )
+from pomdp_belief_tracking.types import Action, Info, Observation, State
 
 
 class StopCondition(Protocol):
@@ -59,6 +54,7 @@ class StopCondition(Protocol):
         :param info: run time information
         :return: true if the condition for stopping is met
         """
+        raise NotImplementedError()
 
 
 def have_sampled_enough(desired_num: int, info: Info) -> bool:
@@ -86,6 +82,7 @@ class AcceptFunction(Protocol):
         :param info: run time information
         :return: whether the sample is accepted
         """
+        raise NotImplementedError()
 
 
 class ProcessRejected(Protocol):
@@ -195,9 +192,9 @@ class AcceptionProgressBar(ProcessAccepted):
 
 def general_rejection_sample(
     stop_condition: StopCondition,
-    proposal_distr: pomdp_belief_tracking.pf.types.ProposalDistribution,
+    proposal_distr: ProposalDistribution,
     accept_function: AcceptFunction,
-    distr: StateDistribution,
+    distr: GenerativeStateDistribution,
     process_accepted: ProcessAccepted = accept_noop,
     process_rejected: ProcessRejected = reject_noop,
 ) -> Tuple[List[State], Info]:
@@ -270,7 +267,7 @@ def rejection_sample(
     n: int,
     process_acpt: ProcessAccepted,
     process_rej: ProcessRejected,
-    initial_state_distribution: StateDistribution,
+    initial_state_distribution: GenerativeStateDistribution,
     a: Action,
     o: Observation,
 ) -> Tuple[ParticleFilter, Info]:
@@ -335,7 +332,7 @@ def create_rejection_sampling(
     """
 
     def rs(
-        p: StateDistribution,
+        p: GenerativeStateDistribution,
         a: Action,
         o: Observation,
     ) -> Tuple[ParticleFilter, Info]:

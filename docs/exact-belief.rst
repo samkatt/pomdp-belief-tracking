@@ -1,7 +1,5 @@
-============
 Exact belief
 ============
 
-.. todo::
-
-   Write
+.. automodule:: pomdp_belief_tracking.exact_belief_update
+   :noindex:

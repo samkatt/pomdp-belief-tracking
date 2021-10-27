@@ -14,9 +14,9 @@ relative probability.
     :noindex:
 
 The particle filter is a
-:class:`~pomdp_belief_tracking.types.StateDistribution`, but provides the
-additional API. Mainly some convenient constructors, and the ability to use
-them as containers.
+:class:`~pomdp_belief_tracking.pf.types.GenerativeStateDistribution`, but
+provides the additional API. Mainly some convenient constructors, and the
+ability to use them as containers.
 
 .. autoclass:: pomdp_belief_tracking.pf.particle_filter.ParticleFilter
     :members: probability_of, from_distribution, from_particles, effective_sample_size
@@ -31,7 +31,8 @@ from operator import eq
 from random import uniform
 from typing import Callable, Iterable, NamedTuple, Optional, Sequence
 
-from pomdp_belief_tracking.types import State, StateDistribution
+from pomdp_belief_tracking.pf.types import GenerativeStateDistribution
+from pomdp_belief_tracking.types import State
 
 
 class Particle(NamedTuple):
@@ -43,7 +44,7 @@ class Particle(NamedTuple):
     """The (relative) probability of the particle"""
 
 
-class ParticleFilter(StateDistribution):
+class ParticleFilter(GenerativeStateDistribution):
     """A distribution from weighted particles"""
 
     def __init__(self, states: Sequence[State]):
@@ -62,7 +63,7 @@ class ParticleFilter(StateDistribution):
             self.particles = []
 
     def __call__(self) -> State:
-        """Implements :class:`pomdp_belief_tracking.types.StateDistribution` protocol: sample states
+        """Implements :class:`~pomdp_belief_tracking.pf.types.GenerativeStateDistribution` protocol: sample states
 
         Simply samples a state according to the distribution specified by the
         particles.
@@ -145,7 +146,7 @@ class ParticleFilter(StateDistribution):
         return effective_sample_size((p.weight for p in self.particles), 1.0)
 
     @staticmethod
-    def from_distribution(distr: StateDistribution, n: int) -> ParticleFilter:
+    def from_distribution(distr: GenerativeStateDistribution, n: int) -> ParticleFilter:
         """Constructs a particle filter of ``n`` particles from ``distr``
 
         Basically samples ``n`` particles.
@@ -228,7 +229,7 @@ def effective_sample_size(
 def apply(f: Callable[[State], State], pf: ParticleFilter) -> ParticleFilter:
     """Returns a new :class:`ParticleFilter` with ``f`` applied on states in ``pf``
 
-    Note: assumes ``f`` does _not_ affect the input :class:`State`, otherwise
+    Note: assumes ``f`` does _not_ affect the input :class:`~pomdp_belief_tracking.types.State`, otherwise
     the input ``pf`` will be affected to
 
     :param f: the function to apply to particles

@@ -33,12 +33,6 @@ environment and a simulator, and spits out its favorite action.
 
 This library provides APIs and implementation of **beliefs**.
 
-.. todo::
-
-  - Write out features
-  - Link to documentation
-  - Link to usage
-
 .. [kaelbling_planning_1998] Kaelbling, Leslie Pack, Michael L. Littman, and
    Anthony R. Cassandra. “Planning and acting in partially observable
    stochastic domains.“ Artificial intelligence 101.1-2 (1998): 99-134.

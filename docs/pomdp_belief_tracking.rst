@@ -12,6 +12,14 @@ Subpackages
 Submodules
 ----------
 
+pomdp\_belief\_tracking.exact\_belief\_update module
+----------------------------------------------------
+
+.. automodule:: pomdp_belief_tracking.exact_belief_update
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 pomdp\_belief\_tracking.pomdp\_belief\_tracking module
 ------------------------------------------------------
 

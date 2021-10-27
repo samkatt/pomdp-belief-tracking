@@ -50,8 +50,8 @@ clean-test: ## remove test and coverage artifacts
 lint: ## check style
 	flake8 pomdp_belief_tracking tests
 	pylint pomdp_belief_tracking tests
-	pyright pomdp_belief_tracking tests
 	mypy pomdp_belief_tracking tests
+	pyright pomdp_belief_tracking tests
 
 format: ## format style
 	black pomdp_belief_tracking tests

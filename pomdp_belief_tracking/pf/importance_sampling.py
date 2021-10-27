@@ -41,16 +41,13 @@ from typing import Any, Callable, Iterable, List, Optional, Tuple
 from typing_extensions import Protocol
 
 from pomdp_belief_tracking.pf.particle_filter import Particle, ParticleFilter
-from pomdp_belief_tracking.pf.types import ProposalDistribution
-from pomdp_belief_tracking.types import (
-    Action,
+from pomdp_belief_tracking.pf.types import (
     BeliefUpdate,
-    Info,
-    Observation,
-    State,
-    StateDistribution,
+    GenerativeStateDistribution,
+    ProposalDistribution,
     TransitionFunction,
 )
+from pomdp_belief_tracking.types import Action, Info, Observation, State
 
 
 class WeightFunction(Protocol):
@@ -68,6 +65,7 @@ class WeightFunction(Protocol):
         :param info: global information stored during importance sampling
         :return: a 0 <= weight <= 1
         """
+        raise NotImplementedError()
 
 
 def general_importance_sample(
@@ -132,7 +130,7 @@ def importance_sample(
     transition_func: TransitionFunction,
     observation_model: Callable[[State, Action, State, Observation], float],
     n: Optional[int],
-    initial_state_distribution: StateDistribution,
+    p: GenerativeStateDistribution,
     a: Action,
     o: Observation,
 ) -> Tuple[ParticleFilter, Info]:
@@ -140,31 +138,29 @@ def importance_sample(
 
     Here the ``transition_func`` is used to propose next states, which are
     weighted according to the ``weight_func`` given ``o``. If
-    ``initial_state_distribution`` is _not_ a particle filter (with a given
+    ``p`` is _not_ a particle filter (with a given
     size), then we sample ``n`` particles with weight 1 to start IS. Otherwise
     we use the particles in the PF.
 
-    ``n`` is necessary when ``initial_state_distribution`` is not a
+    ``n`` is necessary when ``p`` is not a
     :class:`~pomdp_belief_tracking.pf.particle_filter.ParticleFilter`.
     Otherwise ignored.
 
     :param transition_func: the proposal function
     :param observation_model: the model to weight the probability of generating observation ``o``
     :param n: num samples, optional
-    :param initial_state_distribution: the starting distribution
+    :param p: the starting distribution
     :param a: taken action
     :param o: taken observation
     :return: updated belief
     """
 
     # create particles to give to importance sampling
-    if not isinstance(initial_state_distribution, ParticleFilter):
+    if not isinstance(p, ParticleFilter):
         assert n and n > 0
-        initial_state_distribution = ParticleFilter.from_distribution(
-            initial_state_distribution, n
-        )
+        p = ParticleFilter.from_distribution(p, n)
 
-    particles = iter(initial_state_distribution.particles)
+    particles = iter(p.particles)
 
     def prop(s: State, info: Info) -> Tuple[State, Any]:
         """turns the transition function into a proposal function"""
@@ -201,7 +197,7 @@ def create_importance_sampling(
     :param transition_func: how to update states
     :param observation_model: how to weight transitions
     :param n: num samples, optional
-    :return: func:`importance_sample` as :class:`pomdp_belief_tracking.types.BeliefUpdate`
+    :return: func:`importance_sample` as :class:`pomdp_belief_tracking.pf.types.BeliefUpdate`
     """
 
     return partial(importance_sample, transition_func, observation_model, n)
@@ -211,6 +207,7 @@ class ResampleCondition(Protocol):
     """The signature of a resample condition
 
     .. automethod:: __call__
+       :noindex:
 
     Provided implementations:
 
@@ -227,6 +224,7 @@ class ResampleCondition(Protocol):
         :param pf: the particle filter to potentially resample
         :return: ``True`` if ``pf`` should be resampled
         """
+        raise NotImplementedError()
 
 
 def ineffective_sample_size(minimal_size: float, pf: ParticleFilter):
@@ -273,8 +271,8 @@ def create_sequential_importance_sampling(
     IS = create_importance_sampling(transition_func, observation_model, n)
 
     def belief_update(
-        p: StateDistribution, a: Action, o: Observation
-    ) -> Tuple[StateDistribution, Info]:
+        p: GenerativeStateDistribution, a: Action, o: Observation
+    ) -> Tuple[GenerativeStateDistribution, Info]:
         """belief_update.
 
         :param p:
